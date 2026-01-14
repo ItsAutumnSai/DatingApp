@@ -7,8 +7,8 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  final String appTitle = 'Pair Me';
-  // This widget is the root of your application.
+  final String appTitle = 'PairMe';
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
