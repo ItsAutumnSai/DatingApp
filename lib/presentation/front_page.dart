@@ -3,8 +3,13 @@ import 'package:carousel_slider/carousel_slider.dart';
 
 class FrontPage extends StatefulWidget {
   final String title;
-  FrontPage({super.key, required this.title});
+  const FrontPage({super.key, required this.title});
 
+  @override
+  State<FrontPage> createState() => _FrontPageState();
+}
+
+class _FrontPageState extends State<FrontPage> {
   final List<String> bgImages = [
     'assets/images/indonesiancouple_1.jpg',
     'assets/images/indonesiancouple_2.jpg',
@@ -13,21 +18,16 @@ class FrontPage extends StatefulWidget {
   ];
   final String logoImageWhite = 'assets/images/Logo_White.png';
   @override
-  State<FrontPage> createState() => _FrontPageState();
-}
-
-class _FrontPageState extends State<FrontPage> {
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: Stack(
           children: [
             CarouselSlider.builder(
-              itemCount: widget.bgImages.length,
+              itemCount: bgImages.length,
               itemBuilder: (context, index, realIndex) {
                 return Image.asset(
-                  widget.bgImages[index],
+                  bgImages[index],
                   fit: BoxFit.cover,
                   width: double.infinity,
                 );
@@ -43,29 +43,27 @@ class _FrontPageState extends State<FrontPage> {
               ),
             ),
             Center(
-              child: Text(
-                'Welcome to ${widget.title}!',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 10.0,
-                      color: Colors.black,
-                      offset: Offset(2.0, 2.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Welcome to ${widget.title}!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 10.0,
+                          color: Colors.black,
+                          offset: Offset(2.0, 2.0),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 20,
-              left: 20,
-              child: Image.asset(
-                widget.logoImageWhite,
-                width: 100,
-                height: 100,
+                  ),
+                  Image.asset(logoImageWhite, width: 100, height: 100),
+                  
+                ],
               ),
             ),
           ],
