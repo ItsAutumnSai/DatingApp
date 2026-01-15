@@ -11,6 +11,7 @@ class FrontPage extends StatefulWidget {
     'assets/images/indonesiancouple_3.jpg',
     'assets/images/indonesiancouple_4.jpg',
   ];
+  final String logoImageWhite = 'assets/images/Logo_White.png';
   @override
   State<FrontPage> createState() => _FrontPageState();
 }
@@ -25,20 +26,18 @@ class _FrontPageState extends State<FrontPage> {
             CarouselSlider.builder(
               itemCount: widget.bgImages.length,
               itemBuilder: (context, index, realIndex) {
-                return Container(
-                  child: Image.asset(
-                    widget.bgImages[index],
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                  ),
+                return Image.asset(
+                  widget.bgImages[index],
+                  fit: BoxFit.cover,
+                  width: double.infinity,
                 );
               },
               options: CarouselOptions(
                 height: double.infinity,
                 viewportFraction: 1,
                 autoPlay: true,
-                autoPlayInterval: Duration(seconds: 3),
-                autoPlayAnimationDuration: Duration(milliseconds: 800),
+                autoPlayInterval: Duration(seconds: 5),
+                autoPlayAnimationDuration: Duration(milliseconds: 1200),
                 autoPlayCurve: Curves.fastOutSlowIn,
                 enlargeCenterPage: false,
               ),
@@ -58,6 +57,15 @@ class _FrontPageState extends State<FrontPage> {
                     ),
                   ],
                 ),
+              ),
+            ),
+            Positioned(
+              top: 20,
+              left: 20,
+              child: Image.asset(
+                widget.logoImageWhite,
+                width: 100,
+                height: 100,
               ),
             ),
           ],
