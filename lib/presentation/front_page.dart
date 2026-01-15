@@ -19,6 +19,7 @@ class _FrontPageState extends State<FrontPage> {
   final String logoImageWhite = 'assets/images/Logo_White.png';
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       body: Center(
         child: Stack(
@@ -62,7 +63,48 @@ class _FrontPageState extends State<FrontPage> {
                     ),
                   ),
                   Image.asset(logoImageWhite, width: 100, height: 100),
-                  
+                  SizedBox(height: screenHeight * 0.5),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Navigate to the next page or perform an action
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 75,
+                        vertical: 15,
+                      ),
+                      textStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    child: Text(
+                      'Login',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Navigate to the next page or perform an action
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 75,
+                        vertical: 15,
+                      ),
+                      textStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    child: Text(
+                      'Register',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
                 ],
               ),
             ),
