@@ -41,6 +41,8 @@ class _FrontPageState extends State<FrontPage> {
                 autoPlayAnimationDuration: Duration(milliseconds: 1200),
                 autoPlayCurve: Curves.fastOutSlowIn,
                 enlargeCenterPage: false,
+                scrollPhysics: const NeverScrollableScrollPhysics(),
+                pauseAutoPlayOnTouch: false,
               ),
             ),
             Center(
@@ -55,14 +57,23 @@ class _FrontPageState extends State<FrontPage> {
                       fontWeight: FontWeight.bold,
                       shadows: [
                         Shadow(
-                          blurRadius: 10.0,
-                          color: Colors.black,
-                          offset: Offset(2.0, 2.0),
+                          blurRadius: 20.0,
+                          color: Colors.redAccent.withAlpha(150),
                         ),
                       ],
                     ),
                   ),
-                  Image.asset(logoImageWhite, width: 100, height: 100),
+                  Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.redAccent.withAlpha(100),
+                          blurRadius: 30,
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(logoImageWhite, width: 100, height: 100),
+                  ),
                   SizedBox(height: screenHeight * 0.5),
                   ElevatedButton(
                     onPressed: () {
