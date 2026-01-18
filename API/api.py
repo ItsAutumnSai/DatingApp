@@ -126,7 +126,25 @@ def get_user(user_id):
     if photos: data['photos'] = photos.to_dict()
     if prefs: data['prefs'] = prefs.to_dict()
     
+    
+    if hobbies: data['hobbies'] = hobbies.to_dict()
+    if photos: data['photos'] = photos.to_dict()
+    if prefs: data['prefs'] = prefs.to_dict()
+    
     return jsonify(data)
+
+@app.route("/users/search", methods=['GET'])
+@require_api_key
+def search_users():
+    phone = request.args.get('phonenumber')
+    if not phone:
+        return jsonify({"error": "Missing search parameter"}), 400
+        
+    user = User.query.filter_by(phonenumber=phone).first()
+    if user:
+        return jsonify(user.to_dict())
+    else:
+        return jsonify({"message": "User not found"}), 404
 
 @app.route("/users", methods=['POST'])
 @require_api_key

@@ -1,4 +1,8 @@
+import 'package:datingapp/presentation/dashboard_page.dart';
+import 'package:datingapp/presentation/location_register_page.dart';
+import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class PhoneRegisterPage extends StatefulWidget {
   final bool alreadyHaveAccount;
@@ -11,6 +15,7 @@ class PhoneRegisterPage extends StatefulWidget {
 class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _phoneController = TextEditingController();
+  final AuthRepository _authRepository = AuthRepository();
   String _selectedCountryCode = '+62';
 
   final List<String> _countryCodes = [
@@ -94,6 +99,9 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
                           }
                           return null;
                         },
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                       ),
                     ),
                   ],
@@ -102,12 +110,63 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        // TODO: Implement phone verification logic
-                        print(
-                          'Phone: $_selectedCountryCode${_phoneController.text}',
-                        );
+                        final phoneNumber =
+                            '$_selectedCountryCode${_phoneController.text}';
+
+                        if (!widget.alreadyHaveAccount) {
+                          // Register flow - go to location page
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LocationRegisterPage(
+                                phoneNumber: phoneNumber,
+                              ),
+                            ),
+                          );
+                        } else {
+                          // Login flow - check via Repository
+                          try {
+                            // Using AuthRepository to check if user exists
+                            final user = await _authRepository.checkUserExists(
+                              phoneNumber,
+                            );
+
+                            if (user != null) {
+                              // User found
+                              if (context.mounted) {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const DashboardPage(),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'User not found. Please register first.',
+                                    ),
+                                    backgroundColor: Colors.redAccent,
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: $e'),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            }
+                          }
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
