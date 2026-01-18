@@ -56,10 +56,7 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
                   "Verification",
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
-                const Text(
-                  "Please enter your phone number!",
-                  style: TextStyle(fontSize: 18),
-                ),
+                const Text("Is it REALLY you?", style: TextStyle(fontSize: 18)),
                 const SizedBox(height: 20),
                 Row(
                   children: [

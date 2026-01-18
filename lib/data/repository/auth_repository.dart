@@ -29,4 +29,31 @@ class AuthRepository {
   }
 
   // Add login/register methods as needed later
+  Future<bool> registerUser({
+    required String name,
+    required String phoneNumber,
+    required String dateOfBirth,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final body = {
+        'name': name,
+        'phonenumber': phoneNumber,
+        'dateofbirth': dateOfBirth,
+        'prefs': {'latitude': latitude, 'longitude': longitude},
+      };
+
+      final response = await _httpService.post('/users', body: body);
+
+      if (response.statusCode == 201) {
+        return true;
+      } else {
+        // Handle error details if needed
+        return false;
+      }
+    } catch (e) {
+      throw Exception('Registration failed: $e');
+    }
+  }
 }

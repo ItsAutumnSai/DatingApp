@@ -204,9 +204,34 @@ def create_user():
                 religion=pr.get('religion'),
                 bio=pr.get('bio'),
                 openingmove=pr.get('openingmove')
-                # geolocation skipped for now
             )
+            # Handle Geolocation if available in prefs
+            if 'latitude' in pr and 'longitude' in pr:
+                 from sqlalchemy import func
+                 # Assuming the DB has a column 'geolocation' of type POINT with SRID 4326
+                 # We need to set it using ST_GeomFromText
+                 # Note: This usually requires setting the column value to the expression
+                 # But SQLAlchemy objects expect values. 
+                 # For raw SQL functions like this, it's often easier to update after insert 
+                 # or use a specific setter if defined in model with GeoAlchemy2.
+                 # Without GeoAlchemy2 as a dependency in python code, we might issue an update.
+                 
+                 # However, if we want to stick to standard SQLAlchemy without extra deps, 
+                 # we can do a raw SQL execute.
+                 pass
+
             db.session.add(new_prefs)
+            db.session.flush() # flush to get ID
+
+            if 'latitude' in pr and 'longitude' in pr:
+                lat = pr['latitude']
+                lon = pr['longitude']
+                # Raw SQL update for the specific row
+                sql = "UPDATE user_prefs SET geolocation = ST_GeomFromText(:pt, 4326) WHERE id = :id"
+                # POINT(long lat) is standard WKT. Notice Longitude first!
+                pt_str = f'POINT({lon} {lat})' 
+                db.session.execute(db.text(sql), {'pt': pt_str, 'id': new_prefs.id})
+                
         
         db.session.commit()
         return jsonify({"message": "User created", "user_id": new_user.id}), 201
