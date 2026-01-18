@@ -67,10 +67,9 @@ class _LocationRegisterPageState extends State<LocationRegisterPage> {
       return;
     }
 
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
     try {
       Position position = await Geolocator.getCurrentPosition();
+      // print(position);
       if (mounted) {
         Navigator.push(
           context,
@@ -102,22 +101,22 @@ class _LocationRegisterPageState extends State<LocationRegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
               const Text(
                 "Location",
                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
@@ -126,7 +125,7 @@ class _LocationRegisterPageState extends State<LocationRegisterPage> {
                 "So we can find matches near you!",
                 style: TextStyle(fontSize: 18),
               ),
-              const SizedBox(height: 20),
+              const Spacer(),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

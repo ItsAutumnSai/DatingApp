@@ -34,6 +34,16 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -42,16 +52,6 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
                 const Text(
                   "Verification",
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
@@ -103,7 +103,7 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const Spacer(),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -184,6 +184,7 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 50),
               ],
             ),
           ),
