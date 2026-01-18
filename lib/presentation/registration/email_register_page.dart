@@ -1,23 +1,11 @@
-import 'package:datingapp/presentation/gender_interest_register_page.dart';
+import 'package:datingapp/data/model/user_registration_data.dart';
+import 'package:datingapp/presentation/registration/gender_interest_register_page.dart';
 import 'package:flutter/material.dart';
 
 class EmailRegisterPage extends StatefulWidget {
-  final String name;
-  final String phoneNumber;
-  final String dob;
-  final double latitude;
-  final double longitude;
-  final int gender;
+  final UserRegistrationData registrationData;
 
-  const EmailRegisterPage({
-    super.key,
-    required this.name,
-    required this.phoneNumber,
-    required this.dob,
-    required this.latitude,
-    required this.longitude,
-    required this.gender,
-  });
+  const EmailRegisterPage({super.key, required this.registrationData});
 
   @override
   State<EmailRegisterPage> createState() => _EmailRegisterPageState();
@@ -87,17 +75,16 @@ class _EmailRegisterPageState extends State<EmailRegisterPage> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
+                        // Update Data
+                        if (_emailController.text.isNotEmpty) {
+                          widget.registrationData.email = _emailController.text;
+                        }
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => GenderInterestRegisterPage(
-                              name: widget.name,
-                              phoneNumber: widget.phoneNumber,
-                              dob: widget.dob,
-                              latitude: widget.latitude,
-                              longitude: widget.longitude,
-                              gender: widget.gender,
-                              email: _emailController.text,
+                              registrationData: widget.registrationData,
                             ),
                           ),
                         );

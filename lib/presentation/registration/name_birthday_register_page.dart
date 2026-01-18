@@ -1,5 +1,6 @@
 // import 'package:datingapp/data/repository/auth_repository.dart'; // Unused
-import 'package:datingapp/presentation/gender_register_page.dart';
+import 'package:datingapp/data/model/user_registration_data.dart';
+import 'package:datingapp/presentation/registration/gender_register_page.dart';
 import 'package:flutter/material.dart';
 
 class NameBirthdayRegisterPage extends StatefulWidget {
@@ -256,17 +257,25 @@ class _NameBirthdayRegisterPageState extends State<NameBirthdayRegisterPage> {
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pop(context); // Close dialog
+
+                                    // Create Registration Data
+                                    final registrationData =
+                                        UserRegistrationData(
+                                          name: _nameController.text,
+                                          phoneNumber: widget.phoneNumber,
+                                          dob: dob,
+                                          latitude: widget.latitude,
+                                          longitude: widget.longitude,
+                                        );
+
                                     // 3. Navigate to Gender Page
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
                                             GenderRegisterPage(
-                                              name: _nameController.text,
-                                              phoneNumber: widget.phoneNumber,
-                                              dob: dob,
-                                              latitude: widget.latitude,
-                                              longitude: widget.longitude,
+                                              registrationData:
+                                                  registrationData,
                                             ),
                                       ),
                                     );

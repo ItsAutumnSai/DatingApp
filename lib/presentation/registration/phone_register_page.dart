@@ -1,5 +1,5 @@
 import 'package:datingapp/presentation/dashboard_page.dart';
-import 'package:datingapp/presentation/location_register_page.dart';
+import 'package:datingapp/presentation/registration/location_register_page.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

@@ -1,54 +1,38 @@
-import 'package:datingapp/presentation/email_register_page.dart';
+import 'package:datingapp/data/model/religion_model.dart';
+import 'package:datingapp/data/model/user_registration_data.dart';
+import 'package:datingapp/presentation/registration/bio_register_page.dart';
 import 'package:flutter/material.dart';
 
-class GenderRegisterPage extends StatefulWidget {
-  final String name;
-  final String phoneNumber;
-  final String dob;
-  final double latitude;
-  final double longitude;
+class ReligionRegisterPage extends StatefulWidget {
+  final UserRegistrationData registrationData;
 
-  const GenderRegisterPage({
-    super.key,
-    required this.name,
-    required this.phoneNumber,
-    required this.dob,
-    required this.latitude,
-    required this.longitude,
-  });
+  const ReligionRegisterPage({super.key, required this.registrationData});
 
   @override
-  State<GenderRegisterPage> createState() => _GenderRegisterPageState();
+  State<ReligionRegisterPage> createState() => _ReligionRegisterPageState();
 }
 
-class _GenderRegisterPageState extends State<GenderRegisterPage> {
-  // final AuthRepository _authRepository = AuthRepository(); // Moved to final step
-  int? _selectedGender; // 1: Male, 2: Female, 3: Other
+class _ReligionRegisterPageState extends State<ReligionRegisterPage> {
+  int? _selectedReligion;
 
-  final List<Map<String, dynamic>> _genders = [
-    {'id': 1, 'label': 'Male'},
-    {'id': 2, 'label': 'Female'},
-    {'id': 3, 'label': 'Other'},
-  ];
-
-  Widget _buildGenderOption(int id, String label) {
-    final isSelected = _selectedGender == id;
+  Widget _buildOption(int id, String label) {
+    final isSelected = _selectedReligion == id;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedGender = id;
+          _selectedReligion = id;
         });
       },
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-        margin: const EdgeInsets.only(bottom: 15),
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
             color: isSelected ? Colors.redAccent : Colors.grey[300]!,
-            width: 2,
+            width: isSelected ? 2 : 1,
           ),
         ),
         child: Row(
@@ -57,7 +41,7 @@ class _GenderRegisterPageState extends State<GenderRegisterPage> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 color: isSelected ? Colors.redAccent : Colors.black,
               ),
@@ -65,6 +49,22 @@ class _GenderRegisterPageState extends State<GenderRegisterPage> {
             if (isSelected) const Icon(Icons.check, color: Colors.redAccent),
           ],
         ),
+      ),
+    );
+  }
+
+  void _proceed() {
+    // Optional, so null is fine if skipped (but UI forces selection or "Skip" button if we added one)
+    // Here we'll just allow proceed if selected, or maybe add a Skip button.
+    // User request said "Optional".
+
+    widget.registrationData.religion = _selectedReligion;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            BioRegisterPage(registrationData: widget.registrationData),
       ),
     );
   }
@@ -80,6 +80,19 @@ class _GenderRegisterPageState extends State<GenderRegisterPage> {
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          TextButton(
+            onPressed: _proceed,
+            child: const Text(
+              "Skip",
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -87,37 +100,25 @@ class _GenderRegisterPageState extends State<GenderRegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "${widget.name} is a cool name!",
+              const Text(
+                "Religion",
                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
-              const Text("What's your gender?", style: TextStyle(fontSize: 18)),
-              const SizedBox(height: 30),
-              ..._genders
-                  .map((g) => _buildGenderOption(g['id'], g['label']))
-                  .toList(),
-              const Spacer(),
+              const Text(
+                "What's your religion? (Optional)",
+                style: TextStyle(fontSize: 18),
+              ),
+              SizedBox(height: 20),
+              ListView(
+                children: ReligionModel.religions.entries
+                    .map((entry) => _buildOption(entry.key, entry.value))
+                    .toList(),
+              ),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _selectedGender == null
-                      ? null
-                      : () {
-                          // Navigate to Email Page
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EmailRegisterPage(
-                                name: widget.name,
-                                phoneNumber: widget.phoneNumber,
-                                dob: widget.dob,
-                                latitude: widget.latitude,
-                                longitude: widget.longitude,
-                                gender: _selectedGender!,
-                              ),
-                            ),
-                          );
-                        },
+                  onPressed: _selectedReligion == null ? null : _proceed,
                   style: ElevatedButton.styleFrom(
                     elevation: 5,
                     backgroundColor: Colors.white,
@@ -128,10 +129,10 @@ class _GenderRegisterPageState extends State<GenderRegisterPage> {
                     ),
                   ),
                   child: Text(
-                    'Confirm',
+                    'Continue',
                     style: TextStyle(
                       fontSize: 18,
-                      color: _selectedGender == null
+                      color: _selectedReligion == null
                           ? Colors.grey
                           : Colors.redAccent,
                       fontWeight: FontWeight.bold,

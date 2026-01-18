@@ -1,4 +1,4 @@
-import 'package:datingapp/presentation/name_birthday_register_page.dart';
+import 'package:datingapp/presentation/registration/name_birthday_register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 

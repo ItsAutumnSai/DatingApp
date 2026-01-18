@@ -1,26 +1,11 @@
-import 'package:datingapp/data/repository/auth_repository.dart';
-import 'package:datingapp/presentation/dashboard_page.dart';
+import 'package:datingapp/data/model/user_registration_data.dart';
+import 'package:datingapp/presentation/registration/relationship_interest_register_page.dart';
 import 'package:flutter/material.dart';
 
 class GenderInterestRegisterPage extends StatefulWidget {
-  final String name;
-  final String phoneNumber;
-  final String dob;
-  final double latitude;
-  final double longitude;
-  final int gender;
-  final String email;
+  final UserRegistrationData registrationData;
 
-  const GenderInterestRegisterPage({
-    super.key,
-    required this.name,
-    required this.phoneNumber,
-    required this.dob,
-    required this.latitude,
-    required this.longitude,
-    required this.gender,
-    required this.email,
-  });
+  const GenderInterestRegisterPage({super.key, required this.registrationData});
 
   @override
   State<GenderInterestRegisterPage> createState() =>
@@ -29,7 +14,6 @@ class GenderInterestRegisterPage extends StatefulWidget {
 
 class _GenderInterestRegisterPageState
     extends State<GenderInterestRegisterPage> {
-  final AuthRepository _authRepository = AuthRepository();
   int? _selectedInterest; // 1: Men, 2: Women, 3: Everyone
 
   final List<Map<String, dynamic>> _interests = [
@@ -112,47 +96,21 @@ class _GenderInterestRegisterPageState
                 child: ElevatedButton(
                   onPressed: _selectedInterest == null
                       ? null
-                      : () async {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Registering...')),
-                          );
+                      : () {
+                          // Update Data
+                          widget.registrationData.genderInterest =
+                              _selectedInterest;
 
-                          try {
-                            final success = await _authRepository.registerUser(
-                              name: widget.name,
-                              phoneNumber: widget.phoneNumber,
-                              dateOfBirth: widget.dob,
-                              latitude: widget.latitude,
-                              longitude: widget.longitude,
-                              gender: widget.gender,
-                              email: widget.email, // Can be empty string
-                              genderInterest: _selectedInterest!,
-                            );
-
-                            if (success && context.mounted) {
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const DashboardPage(),
-                                ),
-                                (route) => false,
-                              );
-                            } else if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Registration failed. Please try again.',
+                          // Navigate to Next Page (RelationshipRegisterPage)
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  RelationshipInterestRegisterPage(
+                                    registrationData: widget.registrationData,
                                   ),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error: $e')),
-                              );
-                            }
-                          }
+                            ),
+                          );
                         },
                   style: ElevatedButton.styleFrom(
                     elevation: 5,

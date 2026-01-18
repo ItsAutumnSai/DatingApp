@@ -1,4 +1,4 @@
-import 'package:datingapp/presentation/phone_register_page.dart';
+import 'package:datingapp/presentation/registration/phone_register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 

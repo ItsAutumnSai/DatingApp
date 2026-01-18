@@ -2,12 +2,24 @@ from flask import Flask, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import db_config
+import os
+import uuid
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
 # Configure Database
 app.config['SQLALCHEMY_DATABASE_URI'] = db_config.get_database_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configure Upload Folder
+# Configure Upload Folder
+basedir = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 db = SQLAlchemy(app)
 
@@ -20,6 +32,29 @@ def require_api_key(f):
         else:
             abort(401, description="Invalid or missing API key")
     return decorated_function
+
+@app.route("/upload", methods=['POST'])
+@require_api_key
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+        
+    if file:
+        original_filename = secure_filename(file.filename)
+        extension = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'jpg'
+        unique_filename = f"{uuid.uuid4()}.{extension}"
+        
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        file.save(save_path)
+        
+        return jsonify({"filename": unique_filename}), 201
+        
+    return jsonify({"error": "Upload failed"}), 500
 
 # Models
 class User(db.Model):

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:datingapp/data/model/user_model.dart';
+import 'package:datingapp/data/model/user_registration_data.dart';
 import 'package:datingapp/data/service/httpservice.dart';
 
 class AuthRepository {
@@ -28,20 +29,42 @@ class AuthRepository {
     }
   }
 
-  // Add login/register methods as needed later
-  Future<bool> registerUser({
-    required String name,
-    required String phoneNumber,
-    required String dateOfBirth,
-    required double latitude,
-    required double longitude,
-  }) async {
+  Future<bool> registerUser(UserRegistrationData data) async {
     try {
+      // Map hobbies list to keys
+      final Map<String, int> hobbiesMap = {};
+      for (int i = 0; i < data.hobbies.length && i < 5; i++) {
+        hobbiesMap['hobby${i + 1}'] = data.hobbies[i];
+      }
+
+      // Map photos list to keys (using paths as strings for now)
+      final Map<String, String> photosMap = {};
+      for (int i = 0; i < data.photos.length && i < 5; i++) {
+        photosMap['photo${i + 1}'] = data.photos[i];
+      }
+
       final body = {
-        'name': name,
-        'phonenumber': phoneNumber,
-        'dateofbirth': dateOfBirth,
-        'prefs': {'latitude': latitude, 'longitude': longitude},
+        'name': data.name,
+        'phonenumber': data.phoneNumber,
+        'dateofbirth': data.dob,
+        if (data.email != null && data.email!.isNotEmpty) 'email': data.email,
+
+        'hobbies': hobbiesMap,
+        'photos': photosMap,
+
+        'prefs': {
+          'latitude': data.latitude,
+          'longitude': data.longitude,
+          'gender': data.gender,
+          'genderinterest': data.genderInterest,
+          'relationshipinterest': data.relationshipInterest,
+          'height': data.height,
+          'is_smoke': data.isSmoker,
+          'is_drink': data.isDrinker,
+          'religion': data.religion,
+          'bio': data.bio,
+          'openingmove': data.openingMove,
+        },
       };
 
       final response = await _httpService.post('/users', body: body);
@@ -49,7 +72,6 @@ class AuthRepository {
       if (response.statusCode == 201) {
         return true;
       } else {
-        // Handle error details if needed
         return false;
       }
     } catch (e) {
