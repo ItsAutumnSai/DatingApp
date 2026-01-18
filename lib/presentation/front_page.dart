@@ -1,3 +1,4 @@
+import 'package:datingapp/presentation/phone_register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -19,12 +20,32 @@ class _FrontPageState extends State<FrontPage> {
   final String logoImageWhite = 'assets/images/Logo_White.png';
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      body: Center(
-        child: Stack(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: Colors.redAccent,
+        elevation: 0,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CarouselSlider.builder(
+            Image.asset(logoImageWhite, width: 40, height: 40),
+            const SizedBox(width: 10),
+            Text(
+              widget.title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: CarouselSlider.builder(
               itemCount: bgImages.length,
               itemBuilder: (context, index, realIndex) {
                 return Image.asset(
@@ -45,95 +66,72 @@ class _FrontPageState extends State<FrontPage> {
                 pauseAutoPlayOnTouch: false,
               ),
             ),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.redAccent.withAlpha(100),
-                              blurRadius: 20,
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          logoImageWhite,
-                          width: 50,
-                          height: 50,
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                PhoneRegisterPage(alreadyHaveAccount: true),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        elevation: 5,
+                        backgroundColor: Colors.white70,
+                        minimumSize: const Size(double.infinity, 50),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      SizedBox(width: 15),
-                      Text(
-                        widget.title,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 30.0,
-                              color: Colors.redAccent.withAlpha(150),
-                            ),
-                          ],
-                        ),
+                      child: const Text(
+                        'I already have an account',
+                        style: TextStyle(color: Colors.redAccent),
                       ),
-                    ],
-                  ),
-                  SizedBox(height: screenHeight * 0.5),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            // Navigate to the next page or perform an action
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white70,
-                            minimumSize: const Size(double.infinity, 50),
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            textStyle: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          child: const Text(
-                            'I already have an account',
-                            style: TextStyle(color: Colors.redAccent),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        ElevatedButton(
-                          onPressed: () {
-                            // Navigate to the next page or perform an action
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            minimumSize: const Size(double.infinity, 50),
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            textStyle: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          child: const Text(
-                            'I don\'t have an account',
-                            style: TextStyle(color: Colors.redAccent),
-                          ),
-                        ),
-                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                PhoneRegisterPage(alreadyHaveAccount: false),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        elevation: 5,
+                        backgroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      child: const Text(
+                        'I don\'t have an account',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: 50),
+            ],
+          ),
+        ],
       ),
     );
   }
