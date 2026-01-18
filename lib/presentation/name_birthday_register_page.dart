@@ -1,5 +1,5 @@
-import 'package:datingapp/data/repository/auth_repository.dart';
-import 'package:datingapp/presentation/dashboard_page.dart';
+// import 'package:datingapp/data/repository/auth_repository.dart'; // Unused
+import 'package:datingapp/presentation/gender_register_page.dart';
 import 'package:flutter/material.dart';
 
 class NameBirthdayRegisterPage extends StatefulWidget {
@@ -22,7 +22,7 @@ class NameBirthdayRegisterPage extends StatefulWidget {
 class _NameBirthdayRegisterPageState extends State<NameBirthdayRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  final AuthRepository _authRepository = AuthRepository();
+  // final AuthRepository _authRepository = AuthRepository(); // Moved to final registration step
 
   // Date selection
   int _selectedDay = 1;
@@ -153,7 +153,10 @@ class _NameBirthdayRegisterPageState extends State<NameBirthdayRegisterPage> {
                   "Profile",
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
-                const Text("Name", style: TextStyle(fontSize: 18)),
+                const Text(
+                  "It doesn't have to be your real name!",
+                  style: TextStyle(fontSize: 18),
+                ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _nameController,
@@ -171,7 +174,10 @@ class _NameBirthdayRegisterPageState extends State<NameBirthdayRegisterPage> {
                   },
                 ),
                 const SizedBox(height: 20),
-                const Text("Birthday", style: TextStyle(fontSize: 18)),
+                const Text(
+                  "When were you born?",
+                  style: TextStyle(fontSize: 18),
+                ),
                 Row(
                   children: [
                     Expanded(
@@ -214,48 +220,63 @@ class _NameBirthdayRegisterPageState extends State<NameBirthdayRegisterPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () async {
+                    onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         final dob =
                             "$_selectedYear-${_selectedMonth.toString().padLeft(2, '0')}-${_selectedDay.toString().padLeft(2, '0')}";
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Registering...')),
+                        // 1. Calculate Age
+                        final now = DateTime.now();
+                        final birthday = DateTime(
+                          _selectedYear,
+                          _selectedMonth,
+                          _selectedDay,
                         );
-
-                        try {
-                          final success = await _authRepository.registerUser(
-                            name: _nameController.text,
-                            phoneNumber: widget.phoneNumber,
-                            dateOfBirth: dob,
-                            latitude: widget.latitude,
-                            longitude: widget.longitude,
-                          );
-
-                          if (success && context.mounted) {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const DashboardPage(),
-                              ),
-                              (route) => false,
-                            );
-                          } else if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Registration failed. Please try again.',
-                                ),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: $e')),
-                            );
-                          }
+                        int age = now.year - birthday.year;
+                        if (now.month < birthday.month ||
+                            (now.month == birthday.month &&
+                                now.day < birthday.day)) {
+                          age--;
                         }
+
+                        // 2. Show Confirmation Dialog
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              backgroundColor: Colors.white,
+                              title: Text("You're $age right?"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // Close dialog
+                                  },
+                                  child: const Text("No"),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // Close dialog
+                                    // 3. Navigate to Gender Page
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            GenderRegisterPage(
+                                              name: _nameController.text,
+                                              phoneNumber: widget.phoneNumber,
+                                              dob: dob,
+                                              latitude: widget.latitude,
+                                              longitude: widget.longitude,
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text("Yes"),
+                                ),
+                              ],
+                            );
+                          },
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(

@@ -53,10 +53,13 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Verification",
+                  "Phone Number",
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
-                const Text("Is it REALLY you?", style: TextStyle(fontSize: 18)),
+                const Text(
+                  "We need it to authenticate you!",
+                  style: TextStyle(fontSize: 18),
+                ),
                 const SizedBox(height: 20),
                 Row(
                   children: [

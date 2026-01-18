@@ -17,7 +17,33 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: appTitle,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.redAccent),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.redAccent,
+          primary: Colors.redAccent,
+          surfaceTint: Colors.transparent,
+        ),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: Colors.redAccent,
+          selectionColor: Colors.redAccent.withAlpha(100),
+          selectionHandleColor: Colors.redAccent,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          focusColor: Colors.redAccent,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey[400]!),
+          ),
+          labelStyle: const TextStyle(color: Colors.grey),
+          floatingLabelStyle: const TextStyle(color: Colors.redAccent),
+        ),
       ),
       home: FrontPage(title: appTitle),
     );
