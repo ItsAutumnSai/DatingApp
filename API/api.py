@@ -137,12 +137,6 @@ def create_user():
     
     try:
         # 1. Create User
-        # Note: passwordhash should be provided or generated. 
-        # Assuming input sends string and we hash it, or sends binary/hex?
-        # User schema says binary(64) - likely SHA512.
-        # simple example: data['password'] provided -> hash it.
-        # For simplicity, assuming data['password'] is passed.
-        
         import hashlib
         pwd_hash = b''
         if 'password' in data:

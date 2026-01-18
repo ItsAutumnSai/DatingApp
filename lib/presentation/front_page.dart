@@ -49,71 +49,84 @@ class _FrontPageState extends State<FrontPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Welcome to ${widget.title}!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 20.0,
-                          color: Colors.redAccent.withAlpha(150),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.redAccent.withAlpha(100),
+                              blurRadius: 20,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.redAccent.withAlpha(100),
-                          blurRadius: 30,
+                        child: Image.asset(
+                          logoImageWhite,
+                          width: 50,
+                          height: 50,
                         ),
-                      ],
-                    ),
-                    child: Image.asset(logoImageWhite, width: 100, height: 100),
+                      ),
+                      SizedBox(width: 15),
+                      Text(
+                        widget.title,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 30.0,
+                              color: Colors.redAccent.withAlpha(150),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: screenHeight * 0.5),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to the next page or perform an action
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 75,
-                        vertical: 15,
-                      ),
-                      textStyle: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    child: Text(
-                      'Login',
-                      style: TextStyle(color: Colors.redAccent),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to the next page or perform an action
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 75,
-                        vertical: 15,
-                      ),
-                      textStyle: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    child: Text(
-                      'Register',
-                      style: TextStyle(color: Colors.redAccent),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            // Navigate to the next page or perform an action
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 50),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            textStyle: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          child: const Text(
+                            'I already have an account',
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: () {
+                            // Navigate to the next page or perform an action
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white70,
+                            minimumSize: const Size(double.infinity, 50),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            textStyle: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          child: const Text(
+                            'I don\'t have an account',
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
