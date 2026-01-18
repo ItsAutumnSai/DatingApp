@@ -94,7 +94,7 @@ class _FrontPageState extends State<FrontPage> {
                             // Navigate to the next page or perform an action
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
+                            backgroundColor: Colors.white70,
                             minimumSize: const Size(double.infinity, 50),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             textStyle: const TextStyle(
@@ -113,7 +113,7 @@ class _FrontPageState extends State<FrontPage> {
                             // Navigate to the next page or perform an action
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white70,
+                            backgroundColor: Colors.white,
                             minimumSize: const Size(double.infinity, 50),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             textStyle: const TextStyle(
