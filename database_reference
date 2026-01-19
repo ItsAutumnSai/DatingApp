@@ -67,3 +67,14 @@ describe user_like;
 | likedate   | date | YES  |     | NULL    |                |
 +------------+------+------+-----+---------+----------------+
 
+describe chat_history;
++----------+--------------+------+-----+---------+----------------+
+| Field    | Type         | Null | Key | Default | Extra          |
++----------+--------------+------+-----+---------+----------------+
+| id       | int          | NO   | PRI | NULL    | auto_increment |
+| userid1  | int          | YES  |     | NULL    |                |
+| userid2  | int          | YES  |     | NULL    |                |
+| message  | varchar(255) | YES  |     | NULL    |                |
+| datetime | datetime     | YES  |     | NULL    |                |
++----------+--------------+------+-----+---------+----------------+
+

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:datingapp/data/service/httpservice.dart';
+import 'package:datingapp/presentation/dashboard/chat_page.dart';
 import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:datingapp/presentation/widgets/profile_card.dart';
@@ -66,8 +68,68 @@ class _ExplorePageState extends State<ExplorePage> {
       try {
         final currentUserId = UserSession().userId;
         if (currentUserId != null) {
-          await _authRepository.likeUser(user['id'], currentUserId);
-          debugPrint("Liked user ${user['id']}");
+          final response = await _authRepository.likeUser(
+            user['id'],
+            currentUserId,
+          );
+          debugPrint("Liked user ${user['id']}: $response");
+
+          if (response['match'] == true) {
+            if (context.mounted) {
+              await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("It's a Match!"),
+                  content: Text(
+                    "You and ${user['name'] ?? 'someone'} liked each other.",
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text("Keep Swiping"),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                      ),
+                      onPressed: () async {
+                        Navigator.of(context).pop(); // Close dialog
+                        // Start Chat
+                        try {
+                          await _authRepository.startChat(
+                            currentUserId,
+                            user['id'],
+                          );
+                          if (context.mounted) {
+                            Navigator.of(context)
+                                .push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatPage(
+                                      partnerId: user['id'],
+                                      partnerName: user['name'] ?? 'Unknown',
+                                      partnerPhoto:
+                                          user['photos']?['photo1'] != null
+                                          ? '${HttpService().baseUrl}/uploads/${user['photos']['photo1']}'
+                                          : null,
+                                    ),
+                                  ),
+                                )
+                                .then((_) => _loadUsers()); // Refresh on return
+                          }
+                        } catch (e) {
+                          debugPrint("Error starting chat: $e");
+                        }
+                      },
+                      child: const Text(
+                        "Chat Now",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
         }
       } catch (e) {
         debugPrint("Error liking user: $e");
