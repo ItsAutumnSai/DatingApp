@@ -3,7 +3,9 @@ import 'package:datingapp/data/service/httpservice.dart';
 import 'package:datingapp/data/model/user_registration_data.dart';
 import 'package:datingapp/presentation/registration/religion_register_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class PhotosRegisterPage extends StatefulWidget {
   final UserRegistrationData registrationData;
@@ -37,6 +39,52 @@ class _PhotosRegisterPageState extends State<PhotosRegisterPage> {
       // Handle permission or other errors
       print("Image pick error: $e");
     }
+  }
+
+  Future<File> _compressFile(File file) async {
+    int sizeInBytes = await file.length();
+    if (sizeInBytes < 500 * 1024) {
+      return file; // Already small enough
+    }
+
+    print('Original file size: ${sizeInBytes / 1024} KB');
+
+    // Create a temporary path
+    final directory = await getTemporaryDirectory();
+    final targetPath =
+        '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+    int quality = 90;
+    File? result;
+
+    // Try compressing until under 500KB or quality too low
+    while (sizeInBytes > 500 * 1024 && quality > 10) {
+      print('Compressing with quality: $quality');
+      final XFile? compressedXFile =
+          await FlutterImageCompress.compressAndGetFile(
+            file.absolute.path,
+            targetPath,
+            quality: quality,
+          );
+
+      if (compressedXFile != null) {
+        result = File(compressedXFile.path);
+        sizeInBytes = await result.length();
+        print('New file size: ${sizeInBytes / 1024} KB');
+        // Update source file for next iteration if needed (though we usually just drop quality on original)
+        // Actually, compressAndGetFile takes source path, so we can keep using file.absolute.path
+        // regarding target path, we might overwrite? let's stick to simple logic:
+        // if result is good, return it. else decrease quality and TRY AGAIN from original
+      }
+
+      if (sizeInBytes < 500 * 1024) {
+        break;
+      }
+
+      quality -= 15;
+    }
+
+    return result ?? file;
   }
 
   void _removePhoto(int index) {
@@ -185,9 +233,14 @@ class _PhotosRegisterPageState extends State<PhotosRegisterPage> {
                             final httpService = HttpService();
 
                             for (var photo in _selectedPhotos) {
-                              final filename = await httpService.uploadImage(
-                                File(photo.path),
+                              final originalFile = File(photo.path);
+                              final compressedFile = await _compressFile(
+                                originalFile,
                               );
+
+                              final filename = await httpService.uploadImage(
+                                compressedFile,
+                              );  
                               if (filename != null) {
                                 uploadedFilenames.add(filename);
                               }

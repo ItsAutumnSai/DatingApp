@@ -6,6 +6,7 @@ import 'package:datingapp/data/service/httpservice.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -60,7 +61,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _cacheImage(String filename) async {
     try {
       print('Starting _cacheImage for: $filename');
-      final directory = Directory('static/uploads');
+      final appDir = await getApplicationDocumentsDirectory();
+      final directory = Directory('${appDir.path}/static/uploads');
       print('Directory path: ${directory.path}');
 
       if (!await directory.exists()) {
@@ -85,11 +87,42 @@ class _ProfilePageState extends State<ProfilePage> {
       // Download if not exists
       final url = Uri.parse('${HttpService().baseUrl}/uploads/$filename');
       print('Downloading from: $url');
-      final response = await http.get(url);
-      print('Response status: ${response.statusCode}');
-      print('Response body length: ${response.bodyBytes.length}');
 
-      if (response.statusCode == 200) {
+      // Wait a bit to let Image.network (UI) have priority on the server
+      await Future.delayed(const Duration(seconds: 2));
+
+      http.Response? response;
+      int attempts = 0;
+      while (attempts < 3) {
+        try {
+          attempts++;
+          print('Attempt $attempts to download image...');
+          // Use Connection: Keep-Alive as requested
+          response = await http
+              .get(url, headers: {'Connection': 'Keep-Alive'})
+              .timeout(
+                const Duration(seconds: 20),
+                onTimeout: () {
+                  throw Exception('Connection timed out');
+                },
+              );
+
+          if (response.statusCode == 200) {
+            break; // Success
+          }
+        } catch (e) {
+          print('Attempt $attempts failed: $e');
+          if (attempts == 3) rethrow;
+          await Future.delayed(Duration(seconds: 1)); // Wait before retry
+        }
+      }
+
+      print('Response status: ${response?.statusCode}');
+      if (response != null) {
+        print('Response body length: ${response.bodyBytes.length}');
+      }
+
+      if (response != null && response.statusCode == 200) {
         print('Writing ${response.bodyBytes.length} bytes to file...');
         await file.writeAsBytes(response.bodyBytes);
         print('File written successfully');
@@ -101,11 +134,13 @@ class _ProfilePageState extends State<ProfilePage> {
           print('State updated with profile image file');
         }
       } else {
-        print('Failed to download image: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Failed to download image after $attempts attempts');
+        if (response != null) {
+          print('Response body: ${response.body}');
+        }
       }
     } catch (e, stackTrace) {
-      print('Error caching image: $e');
+      print('CRITICAL ERROR caching image: $e');
       print('Stack trace: $stackTrace');
     }
   }
@@ -143,50 +178,83 @@ class _ProfilePageState extends State<ProfilePage> {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Stack(
-            children: [
-              if (_profileImageFile != null)
-                Positioned.fill(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 15.0,
-                      vertical: 25.0,
+          child: SizedBox(
+            height: 500, // Enforce a height so the Stack doesn't collapse
+            width: double.infinity,
+            child: Stack(
+              children: [
+                if (_profileImageFile != null)
+                  Positioned.fill(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 15.0,
+                        vertical: 25.0,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: Image.file(
+                          _profileImageFile!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            print('ERROR rendering local file: $error');
+                            print('Stack trace: $stackTrace');
+                            return Center(
+                              child: Text("Error loading local file: $error"),
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(5),
-                      child: Image.file(
-                        _profileImageFile!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Text("Error loading local file"),
-                          );
-                        },
+                  )
+                else if (photo1 != null)
+                  // Fallback to network image if local file is not yet ready
+                  Positioned.fill(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 15.0,
+                        vertical: 25.0,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: Image.network(
+                          '${HttpService().baseUrl}/uploads/$photo1',
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(child: Icon(Icons.error));
+                          },
+                        ),
                       ),
                     ),
                   ),
-                )
-              else if (photo1 != null)
-                // Fallback to network or loading while caching
-                Positioned.fill(
-                  child: Center(child: CircularProgressIndicator()),
-                ),
 
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Profile"),
-                  Text("Name: $name"),
-                  Text("DOB: $age"),
-                  Text("Bio: $bio"),
-                  Text("Opening Move: $openingMove"),
-                  Text("Gender: $gender"),
-                  Text(
-                    "Hobbies: $hobbies1, $hobbies2, $hobbies3, $hobbies4, $hobbies5",
-                  ),
-                ],
-              ),
-            ],
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Text("Profile"),
+                    // Text("Name: $name"),
+                    // Text("DOB: $age"),
+                    // Text("Bio: $bio"),
+                    // Text("Opening Move: $openingMove"),
+                    // Text("Gender: $gender"),
+                    Text(
+                      "Hobbies: $hobbies1, $hobbies2, $hobbies3, $hobbies4, $hobbies5",
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
