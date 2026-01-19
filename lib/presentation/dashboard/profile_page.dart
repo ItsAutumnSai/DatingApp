@@ -1,8 +1,7 @@
-import 'package:datingapp/data/model/gender_model.dart';
-import 'package:datingapp/data/model/hobby_model.dart';
 import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:datingapp/data/service/httpservice.dart';
+import 'package:datingapp/presentation/widgets/profile_card.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -20,7 +19,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
   String? _error;
-  File? _profileImageFile;
+
+  // Store cached files mapped by photo key (photo1, photo2, etc.)
+  final Map<String, File> _cachedPhotos = {};
 
   @override
   void initState() {
@@ -45,10 +46,16 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = false;
       });
 
-      if (_userData != null &&
-          _userData!['photos'] != null &&
-          _userData!['photos']['photo1'] != null) {
-        _cacheImage(_userData!['photos']['photo1']);
+      if (_userData != null && _userData!['photos'] != null) {
+        final photos = _userData!['photos'];
+        // Iterate through photo1 to photo5
+        for (int i = 1; i <= 5; i++) {
+          final key = 'photo$i';
+          final filename = photos[key];
+          if (filename != null && filename.toString().isNotEmpty) {
+            _cacheImage(key, filename);
+          }
+        }
       }
     } catch (e) {
       setState(() {
@@ -58,21 +65,23 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _cacheImage(String filename) async {
+  Future<void> _cacheImage(String photoKey, String filename) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final directory = Directory('${appDir.path}/static/uploads');
 
       if (!await directory.exists()) {
         await directory.create(recursive: true);
-      } else {}
+      }
 
       final file = File('${directory.path}/$filename');
 
       if (await file.exists()) {
-        setState(() {
-          _profileImageFile = file;
-        });
+        if (mounted) {
+          setState(() {
+            _cachedPhotos[photoKey] = file;
+          });
+        }
         return;
       }
 
@@ -111,13 +120,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
         if (mounted) {
           setState(() {
-            _profileImageFile = file;
+            _cachedPhotos[photoKey] = file;
           });
         }
-      } else {
-        if (response != null) {}
       }
-    } catch (e, stackTrace) {}
+    } catch (e, stackTrace) {
+      print('Error caching image: $e');
+    }
   }
 
   @override
@@ -136,89 +145,24 @@ class _ProfilePageState extends State<ProfilePage> {
       return const Scaffold(body: Center(child: Text("No profile data found")));
     }
 
-    final name = _userData!['name'] ?? 'Unknown';
-    final age = _userData!['dateofbirth'] ?? 'Unknown';
-    final bio = _userData!['prefs']?['bio'] ?? 'No bio';
-    final openingMove =
-        _userData!['prefs']?['openingmove'] ?? 'No opening move';
-    final gender = GenderModel.getLabel(_userData!['prefs']?['gender']);
-    final hobbies1 = HobbyModel.getLabel(_userData!['hobbies']?['hobby1']);
-    final hobbies2 = HobbyModel.getLabel(_userData!['hobbies']?['hobby2']);
-    final hobbies3 = HobbyModel.getLabel(_userData!['hobbies']?['hobby3']);
-    final hobbies4 = HobbyModel.getLabel(_userData!['hobbies']?['hobby4']);
-    final hobbies5 = HobbyModel.getLabel(_userData!['hobbies']?['hobby5']);
-    final photo1 = _userData!['photos']?['photo1'] ?? null;
-
+    // Use the reusable ProfileCard widget
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: SizedBox(
-            height: 500, // Enforce a height so the Stack doesn't collapse
-            width: double.infinity,
-            child: Stack(
-              children: [
-                if (_profileImageFile != null)
-                  Positioned.fill(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 15.0,
-                        vertical: 25.0,
-                      ),
-                      child: Image.file(_profileImageFile!, fit: BoxFit.cover),
-                    ),
-                  )
-                else if (photo1 != null)
-                  // Fallback to network image if local file is not yet ready
-                  Positioned.fill(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 15.0,
-                        vertical: 25.0,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
-                        child: Image.network(
-                          '${HttpService().baseUrl}/uploads/$photo1',
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value:
-                                    loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(child: Icon(Icons.error));
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Text("Profile"),
-                    // Text("Name: $name"),
-                    // Text("DOB: $age"),
-                    // Text("Bio: $bio"),
-                    // Text("Opening Move: $openingMove"),
-                    // Text("Gender: $gender"),
-                    Text(
-                      "Hobbies: $hobbies1, $hobbies2, $hobbies3, $hobbies4, $hobbies5",
-                    ),
-                  ],
-                ),
-              ],
-            ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const Text(
+          "PairMe",
+          style: TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.bold,
           ),
         ),
+        centerTitle: false,
+        automaticallyImplyLeading: false,
+      ),
+      body: ProfileCard(
+        userData: _userData!,
+        cachedPhotos: _cachedPhotos,
+        isCurrentUser: true,
       ),
     );
   }
