@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
           primary: Colors.redAccent,
           surfaceTint: Colors.transparent,
         ),
+        scaffoldBackgroundColor: Colors.white,
         textSelectionTheme: TextSelectionThemeData(
           cursorColor: Colors.redAccent,
           selectionColor: Colors.redAccent.withAlpha(100),

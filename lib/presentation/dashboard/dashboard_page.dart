@@ -29,7 +29,7 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: Colors.white,
       bottomNavigationBar: Theme(
         data: ThemeData(
-          splashColor: Colors.redAccent.withAlpha(15),
+          splashColor: const Color.fromARGB(255, 255, 0, 0).withAlpha(10),
           highlightColor: Colors.transparent,
         ),
         child: BottomNavigationBar(
