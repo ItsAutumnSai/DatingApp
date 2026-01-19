@@ -50,42 +50,50 @@ def upload_file():
         return jsonify({"error": "No selected file"}), 400
         
     if file:
-        original_filename = secure_filename(file.filename)
-        extension = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'jpg'
-        
-        unique_id = str(uuid.uuid4())
-        unique_filename = f"{unique_id}.{extension}"
-        
-        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        file.save(temp_path)
-        
-        # Check if conversion is needed (HEIC/HEIF)
-        if extension in ['heic', 'heif']:
-            try:
-                img = Image.open(temp_path)
-                img = img.convert("RGB") # Convert to standard RGB to handle potential transparency or other modes
-                
-                # Update filename to .jpg
-                unique_filename = f"{unique_id}.jpg"
-                final_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                
-                img.save(final_path, "JPEG")
-                img.close()
-                
-                # Remove the original heic file
-                os.remove(temp_path)
-                
-            except Exception as e:
-                # In case of error, try to clean up
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
-                return jsonify({"error": f"Image processing failed: {str(e)}"}), 500
-        else:
-             # Just keep the original file if not HEIC (or maybe re-save as optimized?)
-             # For now, we trust the original save unless we want to standardize everything.
-             pass
-        
-        return jsonify({"filename": unique_filename}), 201
+        try:
+            # Generate unique filename
+            unique_id = str(uuid.uuid4())
+            unique_filename = f"{unique_id}.jpg" # Always save as jpg
+            final_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            
+            # Open image using Pillow (handles HEIC via pillow_heif register_opener)
+            img = Image.open(file)
+            img = img.convert("RGB") # Convert to RGB for JPEG compatibility
+            
+            # 1. Resize if too large (max 1920px max dimension)
+            max_dimension = 1920
+            if max(img.size) > max_dimension:
+                ratio = max_dimension / max(img.size)
+                new_size = (int(img.width * ratio), int(img.height * ratio))
+                img = img.resize(new_size, Image.Resampling.LANCZOS)
+            
+            # 2. Compress loop to get under 100KB
+            quality = 90
+            target_size = 100 * 1024 # 100KB
+            
+            # Save initially
+            img.save(final_path, "JPEG", quality=quality)
+            
+            # If initial save is too big, apply the 50% resize user permitted
+            if os.path.getsize(final_path) > target_size:
+                # Resize to 50%
+                new_size = (int(img.width * 0.5), int(img.height * 0.5))
+                img = img.resize(new_size, Image.Resampling.LANCZOS)
+                # Reset quality for the loop
+                quality = 90
+                img.save(final_path, "JPEG", quality=quality)
+
+            # Loop quality reduction if STILL too big
+            while os.path.getsize(final_path) > target_size and quality > 30:
+                quality -= 10
+                img.save(final_path, "JPEG", quality=quality)
+            
+            return jsonify({"filename": unique_filename}), 201
+            
+        except Exception as e:
+            if 'final_path' in locals() and os.path.exists(final_path):
+                os.remove(final_path)
+            return jsonify({"error": f"Image processing failed: {str(e)}"}), 500
         
     return jsonify({"error": "Upload failed"}), 500
 
