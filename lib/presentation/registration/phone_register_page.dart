@@ -1,4 +1,4 @@
-import 'package:datingapp/presentation/dashboard_page.dart';
+import 'package:datingapp/presentation/dashboard/dashboard_page.dart';
 import 'package:datingapp/presentation/registration/password_register_page.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:flutter/material.dart';
@@ -116,7 +116,6 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
                             '$_selectedCountryCode${_phoneController.text}';
 
                         if (!widget.alreadyHaveAccount) {
-                          // Register flow - go to location page
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -126,15 +125,12 @@ class _PhoneRegisterPageState extends State<PhoneRegisterPage> {
                             ),
                           );
                         } else {
-                          // Login flow - check via Repository
                           try {
-                            // Using AuthRepository to check if user exists
                             final user = await _authRepository.checkUserExists(
                               phoneNumber,
                             );
 
                             if (user != null) {
-                              // User found
                               if (context.mounted) {
                                 Navigator.pushAndRemoveUntil(
                                   context,

@@ -1,6 +1,6 @@
 import 'package:datingapp/data/model/user_registration_data.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
-import 'package:datingapp/presentation/dashboard_page.dart';
+import 'package:datingapp/presentation/dashboard/dashboard_page.dart';
 import 'package:flutter/material.dart';
 
 class OpeningMoveRegisterPage extends StatefulWidget {
