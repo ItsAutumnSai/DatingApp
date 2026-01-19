@@ -9,7 +9,7 @@ class AuthRepository {
   Future<User?> checkUserExists(String phoneNumber) async {
     try {
       final response = await _httpService.get(
-        '/users/search?phonenumber=$phoneNumber',
+        '/users/search?phonenumber=${Uri.encodeComponent(phoneNumber)}',
       );
 
       if (response.statusCode == 200) {
