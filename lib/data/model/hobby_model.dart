@@ -22,5 +22,5 @@ class HobbyModel {
     20: 'Cars',
   };
 
-  static String getLabel(int id) => hobbies[id] ?? 'Unknown';
+  static String getLabel(int? id) => hobbies[id] ?? '';
 }

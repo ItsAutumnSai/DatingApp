@@ -5,5 +5,5 @@ class RelationshipInterestModel {
     3: 'Figuring it out',
   };
 
-  static String getLabel(int id) => interests[id] ?? 'Unknown';
+  static String getLabel(int? id) => interests[id] ?? 'Unknown';
 }

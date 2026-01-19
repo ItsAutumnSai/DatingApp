@@ -1,3 +1,5 @@
+import 'package:datingapp/data/model/gender_model.dart';
+import 'package:datingapp/data/model/hobby_model.dart';
 import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +68,12 @@ class _ProfilePageState extends State<ProfilePage> {
     final bio = _userData!['prefs']?['bio'] ?? 'No bio';
     final openingMove =
         _userData!['prefs']?['openingmove'] ?? 'No opening move';
+    final gender = GenderModel.getLabel(_userData!['prefs']?['gender']);
+    final hobbies1 = HobbyModel.getLabel(_userData!['hobbies']?['hobby1']);
+    final hobbies2 = HobbyModel.getLabel(_userData!['hobbies']?['hobby2']);
+    final hobbies3 = HobbyModel.getLabel(_userData!['hobbies']?['hobby3']);
+    final hobbies4 = HobbyModel.getLabel(_userData!['hobbies']?['hobby4']);
+    final hobbies5 = HobbyModel.getLabel(_userData!['hobbies']?['hobby5']);
 
     return Scaffold(
       body: Center(
@@ -77,10 +85,12 @@ class _ProfilePageState extends State<ProfilePage> {
               Text("Profile"),
               Text("Name: $name"),
               Text("DOB: $age"),
-              Text("Bio:"),
-              Text(bio),
-              Text("Opening Move:"),
-              Text(openingMove),
+              Text("Bio: $bio"),
+              Text("Opening Move: $openingMove"),
+              Text("Gender: $gender"),
+              Text(
+                "Hobbies: $hobbies1, $hobbies2, $hobbies3, $hobbies4, $hobbies5",
+              ),
             ],
           ),
         ),

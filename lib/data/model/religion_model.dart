@@ -12,5 +12,5 @@ class ReligionModel {
     10: 'Other',
   };
 
-  static String getLabel(int id) => religions[id] ?? 'Unknown';
+  static String getLabel(int? id) => religions[id] ?? '';
 }
