@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
-import 'package:datingapp/data/service/httpservice.dart';
 
 class ChatPage extends StatefulWidget {
   final int partnerId;
@@ -27,15 +26,39 @@ class _ChatPageState extends State<ChatPage> {
   List<dynamic> _messages = [];
   Timer? _timer;
   bool _isLoading = true;
+  bool _isBonded = false;
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
+    _checkBondStatus();
     // Poll every 5 seconds for new messages
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _loadMessages(refresh: true);
+      _checkBondStatus(); // Periodically check bonding status too
     });
+  }
+
+  Future<void> _checkBondStatus() async {
+    try {
+      final myId = UserSession().userId;
+      if (myId == null) return;
+      final profile = await _authRepository.getUserProfile(myId);
+      if (profile != null && profile['prefs'] != null) {
+        final bondedWith = profile['prefs']['bondedwith'];
+        if (mounted) {
+          setState(() {
+            // Check if bonded specifically with this partner or just bonded in general
+            // The requirement implies if accepted, buttons go away.
+            // If bondedWith == widget.partnerId, definitely hide.
+            _isBonded = bondedWith != null;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error checking bond status: $e");
+    }
   }
 
   @override
@@ -90,6 +113,11 @@ class _ChatPageState extends State<ChatPage> {
       if (myId == null) return;
 
       await _authRepository.confirmBond(myId, widget.partnerId);
+
+      setState(() {
+        _isBonded = true;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("You are now Bonded! \u2764\ufe0f")),
       );
@@ -154,7 +182,7 @@ class _ChatPageState extends State<ChatPage> {
           ],
         ),
         actions: [
-          if (canSealTheDeal)
+          if (canSealTheDeal && !_isBonded)
             IconButton(
               icon: const Icon(Icons.volunteer_activism, color: Colors.pink),
               tooltip: "Seal the Deal?",
@@ -230,7 +258,15 @@ class _ChatPageState extends State<ChatPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                if (!isMe)
+                                if (_isBonded)
+                                  const Text(
+                                    "Bonded! \u2764\ufe0f",
+                                    style: TextStyle(
+                                      color: Colors.pinkAccent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                else if (!isMe)
                                   ElevatedButton(
                                     onPressed: _acceptBond,
                                     style: ElevatedButton.styleFrom(

@@ -5,12 +5,6 @@ import 'package:datingapp/presentation/dashboard/explore_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'dart:async';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:datingapp/data/model/user_session.dart';
-import 'package:datingapp/data/repository/auth_repository.dart';
-
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -28,95 +22,14 @@ class _DashboardPageState extends State<DashboardPage> {
     const ChatListPage(),
   ];
 
-  final FlutterLocalNotificationsPlugin _notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-  final AuthRepository _authRepository = AuthRepository();
-  Timer? _notificationTimer;
-  Set<int> _knownLikerIds = {};
-
   @override
   void initState() {
     super.initState();
-    _initNotifications();
-    _startPollingForLikes();
   }
 
   @override
   void dispose() {
-    _notificationTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _initNotifications() async {
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
-    const initSettings = InitializationSettings(android: androidSettings);
-
-    await _notificationsPlugin.initialize(initSettings);
-
-    // Request Permission (Android 13+)
-    if (await Permission.notification.isDenied) {
-      await Permission.notification.request();
-    }
-  }
-
-  void _startPollingForLikes() {
-    // Poll every 30 seconds
-    _notificationTimer = Timer.periodic(const Duration(seconds: 30), (
-      timer,
-    ) async {
-      await _checkNewLikes();
-    });
-    // Initial check
-    _checkNewLikes();
-  }
-
-  Future<void> _checkNewLikes() async {
-    try {
-      final userId = UserSession().userId;
-      if (userId == null) return;
-
-      final matches = await _authRepository.getMatches(userId);
-      final List<dynamic> likedMe = matches['liked_me'] ?? [];
-
-      // If first run, just populate known list
-      if (_knownLikerIds.isEmpty) {
-        for (var user in likedMe) {
-          _knownLikerIds.add(user['id']);
-        }
-        return;
-      }
-
-      for (var user in likedMe) {
-        final id = user['id'];
-        if (!_knownLikerIds.contains(id)) {
-          // NEW LIKE!
-          _knownLikerIds.add(id);
-          _showNotification(user['name'] ?? 'Someone');
-        }
-      }
-    } catch (e) {
-      debugPrint("Notification polling error: $e");
-    }
-  }
-
-  Future<void> _showNotification(String name) async {
-    const androidDetails = AndroidNotificationDetails(
-      'new_likes_channel',
-      'New Likes',
-      channelDescription: 'Notifications for new likes',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
-    const details = NotificationDetails(android: androidDetails);
-
-    await _notificationsPlugin.show(
-      0,
-      'New Like! ✨',
-      '$name likes you! 😍 Open the app to check them out!',
-      details,
-    );
   }
 
   @override
