@@ -1,10 +1,15 @@
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, abort, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import db_config
 import os
 import uuid
 from werkzeug.utils import secure_filename
+from PIL import Image
+import pillow_heif
+
+# Register HEIF opener
+pillow_heif.register_heif_opener()
 
 app = Flask(__name__)
 
@@ -47,10 +52,38 @@ def upload_file():
     if file:
         original_filename = secure_filename(file.filename)
         extension = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'jpg'
-        unique_filename = f"{uuid.uuid4()}.{extension}"
         
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        file.save(save_path)
+        unique_id = str(uuid.uuid4())
+        unique_filename = f"{unique_id}.{extension}"
+        
+        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        file.save(temp_path)
+        
+        # Check if conversion is needed (HEIC/HEIF)
+        if extension in ['heic', 'heif']:
+            try:
+                img = Image.open(temp_path)
+                img = img.convert("RGB") # Convert to standard RGB to handle potential transparency or other modes
+                
+                # Update filename to .jpg
+                unique_filename = f"{unique_id}.jpg"
+                final_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                
+                img.save(final_path, "JPEG")
+                img.close()
+                
+                # Remove the original heic file
+                os.remove(temp_path)
+                
+            except Exception as e:
+                # In case of error, try to clean up
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                return jsonify({"error": f"Image processing failed: {str(e)}"}), 500
+        else:
+             # Just keep the original file if not HEIC (or maybe re-save as optimized?)
+             # For now, we trust the original save unless we want to standardize everything.
+             pass
         
         return jsonify({"filename": unique_filename}), 201
         
@@ -195,6 +228,10 @@ def login():
     else:
         return jsonify({"error": "User not found"}), 404
 
+@app.route('/uploads/<filename>')
+def get_photo(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 @app.route("/users", methods=['POST'])
 @require_api_key
 def create_user():
@@ -283,4 +320,4 @@ def create_user():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, threaded=True, host='0.0.0.0')
