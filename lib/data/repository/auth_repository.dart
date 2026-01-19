@@ -81,4 +81,20 @@ class AuthRepository {
       throw Exception('Registration failed: $e');
     }
   }
+
+  Future<Map<String, dynamic>?> getUserProfile(int userId) async {
+    try {
+      final response = await _httpService.get('/users/$userId');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(
+          'Failed to load profile: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to load profile: $e');
+    }
+  }
 }
