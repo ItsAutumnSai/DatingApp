@@ -170,6 +170,23 @@ class UserLike(db.Model):
     wholikesid = db.Column(db.Integer) # Source User
     likedate = db.Column(db.Date) # Date of like
 
+class ChatHistory(db.Model):
+    __tablename__ = 'chat_history'
+    id = db.Column(db.Integer, primary_key=True)
+    userid1 = db.Column(db.Integer, nullable=False) # Sender (usually)
+    userid2 = db.Column(db.Integer, nullable=False) # Receiver
+    message = db.Column(db.String(255))
+    datetime = db.Column(db.DateTime, default=func.now())
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'userid1': self.userid1,
+            'userid2': self.userid2,
+            'message': self.message,
+            'datetime': self.datetime.isoformat() if self.datetime else None
+        }
+
 class UserPrefs(db.Model):
     __tablename__ = 'user_prefs'
     id = db.Column(db.Integer, primary_key=True)
@@ -286,10 +303,17 @@ def explore_users():
     # Subquery: Users I have already liked
     liked_subquery = db.session.query(UserLike.userid).filter(UserLike.wholikesid == current_user_id)
     
-    # Query: Users NOT in subquery AND NOT me
+    # Subquery: Users I am already chatting with (matched)
+    # Get distinct users from ChatHistory where I am userid1 OR userid2
+    sent_to = db.session.query(ChatHistory.userid2).filter(ChatHistory.userid1 == current_user_id)
+    received_from = db.session.query(ChatHistory.userid1).filter(ChatHistory.userid2 == current_user_id)
+    
+    # Query: Users NOT in liked_subquery AND NOT in chat history AND NOT me
     users = User.query.filter(
         User.id != current_user_id,
-        ~User.id.in_(liked_subquery)
+        ~User.id.in_(liked_subquery),
+        ~User.id.in_(sent_to),
+        ~User.id.in_(received_from)
     ).order_by(func.random()).limit(30).all() # Limit to prevent overload
     
     results = []
@@ -321,13 +345,152 @@ def like_user():
     existing = UserLike.query.filter_by(userid=target_id, wholikesid=source_id).first()
     if existing:
         return jsonify({"message": "Already liked"}), 200
-        
-    from datetime import date
-    new_like = UserLike(userid=target_id, wholikesid=source_id, likedate=date.today())
-    db.session.add(new_like)
-    db.session.commit()
+       # Remove specific card from stack?
+    # For now, just insert
     
-    return jsonify({"message": "Liked"}), 200
+    # CHECK FOR MATCH: Does target_user_id already like source_user_id?
+    existing_like = UserLike.query.filter_by(userid=source_id, wholikesid=target_id).first()
+    
+    if existing_like:
+        # IT'S A MATCH!
+        return jsonify({"message": "Match", "match": True}), 200
+        # Frontend handles "Start Chat" which will delete likes and start chat
+    else:
+        new_like = UserLike(userid=target_id, wholikesid=source_id, likedate=func.current_date())
+        db.session.add(new_like)
+        db.session.commit()
+    
+    return jsonify({"message": "Liked", "match": False}), 200
+
+@app.route("/chat/start", methods=['POST'])
+@require_api_key
+def start_chat():
+    data = request.json
+    user1 = data.get('user_id_1')
+    user2 = data.get('user_id_2')
+    
+    if not user1 or not user2:
+         return jsonify({"error": "Missing user ids"}), 400
+         
+    try:
+        # 1. Delete Likes (Mutual)
+        UserLike.query.filter(
+            ((UserLike.userid == user1) & (UserLike.wholikesid == user2)) |
+            ((UserLike.userid == user2) & (UserLike.wholikesid == user1))
+        ).delete()
+        
+        # 2. Insert Initial System Message (Optional, but establishes the thread)
+        # Or we rely on frontend sending the first msg.
+        # User requested: "Start chatting means remove both in user_like"
+        # We'll just return success, and let frontend send first msg or we insert "Matched!"
+        
+        first_msg = ChatHistory(userid1=user1, userid2=user2, message="Matcheed! Say Hi!", datetime=func.now())
+        db.session.add(first_msg)
+        
+        db.session.commit()
+        return jsonify({"message": "Chat started", "chat_id": first_msg.id}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/like/remove", methods=['POST'])
+@require_api_key
+def remove_like():
+    data = request.json
+    target_id = data.get('target_user_id')
+    source_id = data.get('source_user_id')
+    
+    if not target_id or not source_id:
+        return jsonify({"error": "Missing IDs"}), 400
+        
+    try:
+        # Delete like where userid=target (me) and wholikesid=source (them)
+        # OR userid=source (them) and wholikesid=target (me) ?
+        # Usually from "Likes You" page, I am the target, they are the source.
+        # So I want to remove the record where userid=Me, wholikesid=Them.
+        
+        UserLike.query.filter_by(userid=target_id, wholikesid=source_id).delete()
+        db.session.commit()
+        return jsonify({"message": "Like removed"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/chat/list", methods=['GET'])
+@require_api_key
+def get_chat_list():
+    current_user_id = request.args.get('current_user_id')
+    if not current_user_id:
+        return jsonify({"error": "Missing current_user_id"}), 400
+        
+    # Find distinct users I have chatted with
+    # userid1 = me OR userid2 = me
+    
+    sent_to = db.session.query(ChatHistory.userid2).filter(ChatHistory.userid1 == current_user_id).distinct()
+    received_from = db.session.query(ChatHistory.userid1).filter(ChatHistory.userid2 == current_user_id).distinct()
+    
+    chat_partner_ids = set()
+    for r in sent_to: chat_partner_ids.add(r[0])
+    for r in received_from: chat_partner_ids.add(r[0])
+    
+    # Fetch User Details
+    users = User.query.filter(User.id.in_(chat_partner_ids)).all()
+    results = []
+    for user in users:
+         # Get last message?
+         last_msg = ChatHistory.query.filter(
+            ((ChatHistory.userid1 == current_user_id) & (ChatHistory.userid2 == user.id)) |
+            ((ChatHistory.userid1 == user.id) & (ChatHistory.userid2 == current_user_id))
+         ).order_by(ChatHistory.datetime.desc()).first()
+         
+         u_dict = user.to_dict()
+         
+         # Need main photo for avatar
+         photos = UserPhotos.query.filter_by(userid=user.id).first()
+         if photos: u_dict['photos'] = photos.to_dict()
+         
+         if last_msg:
+             u_dict['last_message'] = last_msg.message
+             u_dict['last_message_time'] = last_msg.datetime.isoformat()
+             
+         results.append(u_dict)
+         
+    return jsonify(results), 200
+
+@app.route("/chat/history", methods=['GET'])
+@require_api_key
+def get_chat_history():
+    user1 = request.args.get('user1')
+    user2 = request.args.get('user2')
+    
+    if not user1 or not user2:
+        return jsonify({"error": "Missing user ids"}), 400
+        
+    messages = ChatHistory.query.filter(
+        ((ChatHistory.userid1 == user1) & (ChatHistory.userid2 == user2)) |
+        ((ChatHistory.userid1 == user2) & (ChatHistory.userid2 == user1))
+    ).order_by(ChatHistory.datetime.asc()).all()
+    
+    return jsonify([m.to_dict() for m in messages]), 200
+
+@app.route("/chat/send", methods=['POST'])
+@require_api_key
+def send_message():
+    data = request.json
+    sender = data.get('sender_id')
+    receiver = data.get('receiver_id')
+    message = data.get('message')
+    
+    if not sender or not receiver or not message:
+         return jsonify({"error": "Missing data"}), 400
+         
+    new_msg = ChatHistory(userid1=sender, userid2=receiver, message=message, datetime=func.now())
+    db.session.add(new_msg)
+    db.session.commit()
+    return jsonify(new_msg.to_dict()), 200
 
 @app.route("/matches", methods=['GET'])
 @require_api_key

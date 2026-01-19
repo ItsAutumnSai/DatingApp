@@ -160,18 +160,104 @@ class AuthRepository {
     }
   }
 
-  Future<void> likeUser(int targetUserId, int sourceUserId) async {
+  Future<Map<String, dynamic>> likeUser(
+    int targetUserId,
+    int sourceUserId,
+  ) async {
     try {
       final response = await _httpService.post(
         '/like',
         body: {'target_user_id': targetUserId, 'source_user_id': sourceUserId},
       );
 
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
         throw Exception('Failed to like user: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Failed to like user: $e');
+    }
+  }
+
+  Future<void> removeLike(int targetUserId, int sourceUserId) async {
+    try {
+      final response = await _httpService.post(
+        '/like/remove',
+        body: {'target_user_id': targetUserId, 'source_user_id': sourceUserId},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to remove like: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to remove like: $e');
+    }
+  }
+
+  Future<void> startChat(int user1, int user2) async {
+    try {
+      final response = await _httpService.post(
+        '/chat/start',
+        body: {'user_id_1': user1, 'user_id_2': user2},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to start chat: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to start chat: $e');
+    }
+  }
+
+  Future<List<dynamic>> getChatList(int currentUserId) async {
+    try {
+      final response = await _httpService.get(
+        '/chat/list?current_user_id=$currentUserId',
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load chat list: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load chat list: $e');
+    }
+  }
+
+  Future<List<dynamic>> getChatHistory(int user1, int user2) async {
+    try {
+      final response = await _httpService.get(
+        '/chat/history?user1=$user1&user2=$user2',
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load chat history: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load chat history: $e');
+    }
+  }
+
+  Future<void> sendMessage(int senderId, int receiverId, String message) async {
+    try {
+      final response = await _httpService.post(
+        '/chat/send',
+        body: {
+          'sender_id': senderId,
+          'receiver_id': receiverId,
+          'message': message,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to send message: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to send message: $e');
     }
   }
 

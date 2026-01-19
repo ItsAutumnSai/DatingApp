@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:datingapp/data/service/httpservice.dart';
+import 'package:datingapp/presentation/dashboard/chat_page.dart';
 
 class LikesYouPage extends StatefulWidget {
   const LikesYouPage({super.key});
@@ -198,6 +199,107 @@ class _LikesYouPageState extends State<LikesYouPage> {
                   if (photoUrl == null)
                     const Center(
                       child: Icon(Icons.person, size: 60, color: Colors.grey),
+                    ),
+                  // Buttons (Check and X) - Only for "Likes You" tab (which is index 0 of TabBarView, passed as first list)
+                  // We need to differentiate or just show for all. Usually "You Liked" implies you already acted.
+                  // But the user request specifically mentioned "Likes You" option.
+                  // Since _buildList is generic, we'll try to guess based on list content reference,
+                  // OR better, pass a flag. But for now, let's just add it.
+                  // Wait, "You Liked" means I liked THEM. I don't need to accept them. I can unlike them.
+                  // "Likes You" means THEY liked ME. I need to accept or reject.
+                  // Let's modify _buildList to take `isLikesYou` param.
+                  if (users == _likedMeUsers)
+                    Positioned(
+                      bottom: 20,
+                      right: 20,
+                      child: Row(
+                        children: [
+                          // Reject Button
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              onPressed: () async {
+                                // Remove Like
+                                try {
+                                  final currentUserId = UserSession().userId;
+                                  if (currentUserId != null) {
+                                    await _authRepository.removeLike(
+                                      currentUserId,
+                                      user['id'],
+                                    );
+                                    setState(() {
+                                      users.removeAt(index);
+                                    });
+                                  }
+                                } catch (e) {
+                                  debugPrint("Error removing like: $e");
+                                }
+                              },
+                              icon: const Icon(Icons.close, color: Colors.red),
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          // Accept Button
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              onPressed: () async {
+                                // Start Chat
+                                try {
+                                  final currentUserId = UserSession().userId;
+                                  if (currentUserId != null) {
+                                    await _authRepository.startChat(
+                                      currentUserId,
+                                      user['id'],
+                                    );
+                                    if (context.mounted) {
+                                      Navigator.of(context)
+                                          .push(
+                                            MaterialPageRoute(
+                                              builder: (context) => ChatPage(
+                                                partnerId: user['id'],
+                                                partnerName: name,
+                                                partnerPhoto: photoUrl,
+                                              ),
+                                            ),
+                                          )
+                                          .then(
+                                            (_) => _loadMatches(),
+                                          ); // Refresh on return
+                                    }
+                                  }
+                                } catch (e) {
+                                  debugPrint("Error starting chat: $e");
+                                }
+                              },
+                              icon: const Icon(
+                                Icons.check,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               ),
