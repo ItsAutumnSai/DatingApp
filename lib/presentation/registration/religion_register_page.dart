@@ -109,10 +109,12 @@ class _ReligionRegisterPageState extends State<ReligionRegisterPage> {
                 style: TextStyle(fontSize: 18),
               ),
               SizedBox(height: 20),
-              ListView(
-                children: ReligionModel.religions.entries
-                    .map((entry) => _buildOption(entry.key, entry.value))
-                    .toList(),
+              Expanded(
+                child: ListView(
+                  children: ReligionModel.religions.entries
+                      .map((entry) => _buildOption(entry.key, entry.value))
+                      .toList(),
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
