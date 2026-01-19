@@ -3,6 +3,7 @@ import 'package:datingapp/presentation/dashboard/likesyou_page.dart';
 import 'package:datingapp/presentation/dashboard/profile_page.dart';
 import 'package:datingapp/presentation/dashboard/explore_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -28,8 +29,8 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: Colors.white,
       bottomNavigationBar: Theme(
         data: ThemeData(
-          splashColor: Colors.transparent,
-          highlightColor: Colors.redAccent[100],
+          splashColor: Colors.redAccent.withAlpha(15),
+          highlightColor: Colors.transparent,
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
@@ -45,9 +46,9 @@ class _DashboardPageState extends State<DashboardPage> {
           unselectedItemColor: Colors.grey[400],
           showSelectedLabels: false,
           showUnselectedLabels: false,
-          iconSize: 32,
-          items: const [
-            BottomNavigationBarItem(
+          iconSize: 38,
+          items: [
+            const BottomNavigationBarItem(
               icon: Padding(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 child: Icon(Icons.person),
@@ -56,22 +57,30 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Icon(Icons.style),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: SvgPicture.asset(
+                  'assets/images/Logo_Vector.svg',
+                  height: 32,
+                  width: 32,
+                  colorFilter: ColorFilter.mode(
+                    _currentIndex == 1 ? Colors.redAccent : Colors.grey[400]!,
+                    BlendMode.srcIn,
+                  ),
+                ),
               ),
               label: 'Explore',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Padding(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 child: Icon(Icons.favorite),
               ),
               label: 'LikesYou',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Padding(
                 padding: EdgeInsets.symmetric(vertical: 10),
-                child: Icon(Icons.chat_bubble),
+                child: Icon(Icons.chat_bubble_rounded),
               ),
               label: 'Chat',
             ),

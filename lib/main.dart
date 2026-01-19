@@ -1,6 +1,5 @@
 import 'package:datingapp/presentation/front_page.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
