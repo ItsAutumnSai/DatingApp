@@ -27,7 +27,7 @@ class AuthRepository {
     }
   }
 
-  Future<bool> registerUser(UserRegistrationData data) async {
+  Future<int?> registerUser(UserRegistrationData data) async {
     try {
       // Map hobbies list to keys
       final Map<String, int> hobbiesMap = {};
@@ -69,7 +69,8 @@ class AuthRepository {
       final response = await _httpService.post('/users', body: body);
 
       if (response.statusCode == 201) {
-        return true;
+        final responseData = jsonDecode(response.body);
+        return responseData['user_id'];
       } else {
         final errorData = jsonDecode(response.body);
         throw Exception(

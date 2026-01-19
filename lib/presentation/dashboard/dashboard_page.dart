@@ -13,7 +13,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  int _currentIndex = 1; // Start at Swipe Page by default
+  int _currentIndex = 1;
 
   final List<Widget> _pages = [
     const ProfilePage(),

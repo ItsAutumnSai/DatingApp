@@ -1,3 +1,4 @@
+import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:datingapp/presentation/dashboard/dashboard_page.dart';
 import 'package:flutter/material.dart';
@@ -98,20 +99,24 @@ class _PasswordLoginPageState extends State<PasswordLoginPage> {
                               });
 
                               try {
-                                await _authRepository.login(
+                                final user = await _authRepository.login(
                                   widget.phoneNumber,
                                   _passwordController.text,
                                 );
 
-                                if (context.mounted) {
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const DashboardPage(),
-                                    ),
-                                    (route) => false,
-                                  );
+                                if (user != null) {
+                                  UserSession().userId = user.id;
+
+                                  if (context.mounted) {
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const DashboardPage(),
+                                      ),
+                                      (route) => false,
+                                    );
+                                  }
                                 }
                               } catch (e) {
                                 if (context.mounted) {

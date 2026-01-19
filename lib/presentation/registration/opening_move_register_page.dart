@@ -1,3 +1,4 @@
+import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/model/user_registration_data.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:datingapp/presentation/dashboard/dashboard_page.dart';
@@ -83,18 +84,22 @@ class _OpeningMoveRegisterPageState extends State<OpeningMoveRegisterPage> {
 
                           try {
                             // REGISTER USER
-                            final success = await _authRepository.registerUser(
+                            final userId = await _authRepository.registerUser(
                               widget.registrationData,
                             );
 
-                            if (success && context.mounted) {
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const DashboardPage(),
-                                ),
-                                (route) => false,
-                              );
+                            if (userId != null) {
+                              UserSession().userId = userId;
+
+                              if (context.mounted) {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const DashboardPage(),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
                             } else if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
