@@ -25,7 +25,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: _pages[_currentIndex],
       backgroundColor: Colors.white,
       bottomNavigationBar: Theme(
         data: ThemeData(

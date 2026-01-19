@@ -131,7 +131,7 @@ class _ExplorePageState extends State<ExplorePage> {
                 controller: _controller,
                 cardsCount: _users.length,
                 onSwipe: _onSwipe,
-                numberOfCardsDisplayed: 3,
+                numberOfCardsDisplayed: _users.length < 2 ? _users.length : 2,
                 backCardOffset: const Offset(40, 40),
                 padding: const EdgeInsets.all(24.0),
                 cardBuilder:
