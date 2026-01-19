@@ -174,4 +174,35 @@ class AuthRepository {
       throw Exception('Failed to like user: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getMatches(int currentUserId) async {
+    try {
+      final response = await _httpService.get(
+        '/matches?current_user_id=$currentUserId',
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load matches: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load matches: $e');
+    }
+  }
+
+  Future<void> deleteAccount(int userId) async {
+    try {
+      final response = await _httpService.post(
+        '/delete_user',
+        body: {'user_id': userId},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete account: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to delete account: $e');
+    }
+  }
 }

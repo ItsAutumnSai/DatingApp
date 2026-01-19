@@ -189,6 +189,52 @@ class _ProfilePageState extends State<ProfilePage> {
                     builder: (context) => const ChangePasswordPage(),
                   ),
                 );
+              } else if (value == 'delete') {
+                // Confirm delete
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Delete Account"),
+                    content: const Text(
+                      "Are you sure you want to delete your account? This action cannot be undone.",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text("Delete"),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  try {
+                    final userId = UserSession().userId;
+                    if (userId != null) {
+                      await _authRepository.deleteAccount(userId);
+                      UserSession().clearSession();
+                      if (context.mounted) {
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/login',
+                          (Route<dynamic> route) => false,
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                    }
+                  }
+                }
               }
             },
             itemBuilder: (BuildContext context) {
@@ -199,6 +245,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Text('Change Password'),
                 ),
                 const PopupMenuItem(value: 'logout', child: Text('Logout')),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text(
+                    'Delete Account',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
               ];
             },
             icon: const Icon(Icons.more_vert, color: Colors.black),

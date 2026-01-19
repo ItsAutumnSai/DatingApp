@@ -1,12 +1,14 @@
-from flask import Flask, request, jsonify, abort, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
-import db_config
 import os
 import uuid
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pillow_heif
+import logging
+from sqlalchemy.sql import func
+import db_config
 
 # Register HEIF opener
 pillow_heif.register_heif_opener()
@@ -288,7 +290,7 @@ def explore_users():
     users = User.query.filter(
         User.id != current_user_id,
         ~User.id.in_(liked_subquery)
-    ).limit(30).all() # Limit to prevent overload
+    ).order_by(func.random()).limit(30).all() # Limit to prevent overload
     
     results = []
     for user in users:
@@ -326,6 +328,68 @@ def like_user():
     db.session.commit()
     
     return jsonify({"message": "Liked"}), 200
+
+@app.route("/matches", methods=['GET'])
+@require_api_key
+def get_matches():
+    current_user_id = request.args.get('current_user_id')
+    if not current_user_id:
+        return jsonify({"error": "Missing current_user_id"}), 400
+        
+    # 1. Liked Me (People who liked current_user)
+    liked_me_ids = db.session.query(UserLike.wholikesid).filter(UserLike.userid == current_user_id).all()
+    liked_me_ids = [i[0] for i in liked_me_ids]
+    
+    # 2. My Likes (People current_user liked)
+    my_likes_ids = db.session.query(UserLike.userid).filter(UserLike.wholikesid == current_user_id).all()
+    my_likes_ids = [i[0] for i in my_likes_ids]
+    
+    def fetch_users(user_ids):
+        users = User.query.filter(User.id.in_(user_ids)).all()
+        results = []
+        for user in users:
+             hobbies = UserHobbies.query.filter_by(userid=user.id).first()
+             photos = UserPhotos.query.filter_by(userid=user.id).first()
+             prefs = UserPrefs.query.filter_by(userid=user.id).first()
+             
+             u_dict = user.to_dict()
+             if hobbies: u_dict['hobbies'] = hobbies.to_dict()
+             if photos: u_dict['photos'] = photos.to_dict()
+             if prefs: u_dict['prefs'] = prefs.to_dict()
+             results.append(u_dict)
+        return results
+
+    return jsonify({
+        "liked_me": fetch_users(liked_me_ids),
+        "my_likes": fetch_users(my_likes_ids)
+    })
+
+@app.route("/delete_user", methods=['POST'])
+@require_api_key
+def delete_user():
+    data = request.json
+    user_id = data.get('user_id')
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+        
+    try:
+        # Cascade Delete
+        # 1. UserLike (where user is target OR source)
+        UserLike.query.filter((UserLike.userid == user_id) | (UserLike.wholikesid == user_id)).delete()
+        
+        # 2. Related Tables
+        UserPhotos.query.filter_by(userid=user_id).delete()
+        UserHobbies.query.filter_by(userid=user_id).delete()
+        UserPrefs.query.filter_by(userid=user_id).delete()
+        
+        # 3. User Table
+        User.query.filter_by(id=user_id).delete()
+        
+        db.session.commit()
+        return jsonify({"message": "User deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/change_password", methods=['POST'])
 @require_api_key
