@@ -54,10 +54,6 @@ class _ReligionRegisterPageState extends State<ReligionRegisterPage> {
   }
 
   void _proceed() {
-    // Optional, so null is fine if skipped (but UI forces selection or "Skip" button if we added one)
-    // Here we'll just allow proceed if selected, or maybe add a Skip button.
-    // User request said "Optional".
-
     widget.registrationData.religion = _selectedReligion;
 
     Navigator.push(
@@ -80,19 +76,6 @@ class _ReligionRegisterPageState extends State<ReligionRegisterPage> {
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          TextButton(
-            onPressed: _proceed,
-            child: const Text(
-              "Skip",
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -131,7 +114,7 @@ class _ReligionRegisterPageState extends State<ReligionRegisterPage> {
                     ),
                   ),
                   child: Text(
-                    'Continue',
+                    'Confirm',
                     style: TextStyle(
                       fontSize: 18,
                       color: _selectedReligion == null

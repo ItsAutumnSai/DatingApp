@@ -139,7 +139,7 @@ class _HeightRegisterPageState extends State<HeightRegisterPage> {
                     ),
                   ),
                   child: const Text(
-                    'Continue',
+                    'Confirm',
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.redAccent,

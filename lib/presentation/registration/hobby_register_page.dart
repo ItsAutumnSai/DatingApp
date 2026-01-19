@@ -126,7 +126,7 @@ class _HobbyRegisterPageState extends State<HobbyRegisterPage> {
                     ),
                   ),
                   child: Text(
-                    'Continue (${_selectedHobbies.length}/5)',
+                    'Confirm (${_selectedHobbies.length}/5)',
                     style: TextStyle(
                       fontSize: 18,
                       color: _selectedHobbies.isEmpty

@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 
 class NameBirthdayRegisterPage extends StatefulWidget {
   final String phoneNumber;
+  final String password;
   final double latitude;
   final double longitude;
 
   const NameBirthdayRegisterPage({
     super.key,
     required this.phoneNumber,
+    required this.password,
     required this.latitude,
     required this.longitude,
   });
@@ -263,6 +265,7 @@ class _NameBirthdayRegisterPageState extends State<NameBirthdayRegisterPage> {
                                         UserRegistrationData(
                                           name: _nameController.text,
                                           phoneNumber: widget.phoneNumber,
+                                          password: widget.password,
                                           dob: dob,
                                           latitude: widget.latitude,
                                           longitude: widget.longitude,

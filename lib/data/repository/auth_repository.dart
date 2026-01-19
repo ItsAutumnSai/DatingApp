@@ -46,6 +46,7 @@ class AuthRepository {
       final body = {
         'name': data.name,
         'phonenumber': data.phoneNumber,
+        'password': data.password,
         'dateofbirth': data.dob,
         if (data.email != null && data.email!.isNotEmpty) 'email': data.email,
 
@@ -72,7 +73,10 @@ class AuthRepository {
       if (response.statusCode == 201) {
         return true;
       } else {
-        return false;
+        final errorData = jsonDecode(response.body);
+        throw Exception(
+          errorData['error'] ?? 'Registration failed: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Registration failed: $e');

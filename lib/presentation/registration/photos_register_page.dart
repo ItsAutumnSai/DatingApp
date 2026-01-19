@@ -240,7 +240,7 @@ class _PhotosRegisterPageState extends State<PhotosRegisterPage> {
                           ),
                         )
                       : Text(
-                          'Continue',
+                          'Confirm',
                           style: TextStyle(
                             fontSize: 18,
                             color: _selectedPhotos.length < 2

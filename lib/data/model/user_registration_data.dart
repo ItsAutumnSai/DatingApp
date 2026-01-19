@@ -16,6 +16,7 @@ class UserRegistrationData {
   int? religion;
   String? bio;
   String? openingMove;
+  String password;
 
   UserRegistrationData({
     this.name = '',
@@ -35,6 +36,7 @@ class UserRegistrationData {
     this.religion,
     this.bio,
     this.openingMove,
+    this.password = '',
   });
 
   @override

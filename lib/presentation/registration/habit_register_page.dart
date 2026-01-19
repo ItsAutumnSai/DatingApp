@@ -156,7 +156,7 @@ class _HabitRegisterPageState extends State<HabitRegisterPage> {
                     ),
                   ),
                   child: Text(
-                    'Continue',
+                    'Confirm',
                     style: TextStyle(
                       fontSize: 18,
                       color: (_isDrinker == null || _isSmoker == null)

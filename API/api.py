@@ -228,44 +228,37 @@ def create_user():
             
         if 'prefs' in data:
             pr = data['prefs']
-            new_prefs = UserPrefs(
-                userid=new_user.id,
-                gender=pr.get('gender'),
-                height=pr.get('height'),
-                genderinterest=pr.get('genderinterest'),
-                relationshipinterest=pr.get('relationshipinterest'),
-                is_smoke=pr.get('is_smoke'),
-                is_drink=pr.get('is_drink'),
-                religion=pr.get('religion'),
-                bio=pr.get('bio'),
-                openingmove=pr.get('openingmove')
+            # Use raw SQL to insert UserPrefs with geolocation
+            pr = data['prefs']
+            lat = pr.get('latitude', 0.0)
+            lon = pr.get('longitude', 0.0)
+            
+            sql = """
+            INSERT INTO user_prefs (
+                userid, gender, height, genderinterest, relationshipinterest, 
+                is_smoke, is_drink, religion, bio, openingmove, geolocation
+            ) VALUES (
+                :userid, :gender, :height, :genderinterest, :relationshipinterest,
+                :is_smoke, :is_drink, :religion, :bio, :openingmove,
+                ST_GeomFromText(:pt, 4326)
             )
-            # Handle Geolocation if available in prefs
-            if 'latitude' in pr and 'longitude' in pr:
-                 from sqlalchemy import func
-                 # Assuming the DB has a column 'geolocation' of type POINT with SRID 4326
-                 # We need to set it using ST_GeomFromText
-                 # Note: This usually requires setting the column value to the expression
-                 # But SQLAlchemy objects expect values. 
-                 # For raw SQL functions like this, it's often easier to update after insert 
-                 # or use a specific setter if defined in model with GeoAlchemy2.
-                 # Without GeoAlchemy2 as a dependency in python code, we might issue an update.
-                 
-                 # However, if we want to stick to standard SQLAlchemy without extra deps, 
-                 # we can do a raw SQL execute.
-                 pass
-
-            db.session.add(new_prefs)
-            db.session.flush() # flush to get ID
-
-            if 'latitude' in pr and 'longitude' in pr:
-                lat = pr['latitude']
-                lon = pr['longitude']
-                # Raw SQL update for the specific row
-                sql = "UPDATE user_prefs SET geolocation = ST_GeomFromText(:pt, 4326) WHERE id = :id"
-                # POINT(long lat) is standard WKT. Notice Longitude first!
-                pt_str = f'POINT({lon} {lat})' 
-                db.session.execute(db.text(sql), {'pt': pt_str, 'id': new_prefs.id})
+            """
+            
+            pt_str = f'POINT({lon} {lat})'
+            
+            db.session.execute(db.text(sql), {
+                'userid': new_user.id,
+                'gender': pr.get('gender'),
+                'height': pr.get('height'),
+                'genderinterest': pr.get('genderinterest'),
+                'relationshipinterest': pr.get('relationshipinterest'),
+                'is_smoke': pr.get('is_smoke'),
+                'is_drink': pr.get('is_drink'),
+                'religion': pr.get('religion'),
+                'bio': pr.get('bio'),
+                'openingmove': pr.get('openingmove'),
+                'pt': pt_str
+            })
                 
         
         db.session.commit()

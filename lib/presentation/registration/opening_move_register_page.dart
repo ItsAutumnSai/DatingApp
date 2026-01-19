@@ -137,7 +137,7 @@ class _OpeningMoveRegisterPageState extends State<OpeningMoveRegisterPage> {
                           ),
                         )
                       : const Text(
-                          'Finish',
+                          'That\'s it!',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.redAccent,

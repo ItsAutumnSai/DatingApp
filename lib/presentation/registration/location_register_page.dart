@@ -4,7 +4,12 @@ import 'package:geolocator/geolocator.dart';
 
 class LocationRegisterPage extends StatefulWidget {
   final String phoneNumber;
-  const LocationRegisterPage({super.key, required this.phoneNumber});
+  final String password;
+  const LocationRegisterPage({
+    super.key,
+    required this.phoneNumber,
+    required this.password,
+  });
 
   @override
   State<LocationRegisterPage> createState() => _LocationRegisterPageState();
@@ -76,6 +81,7 @@ class _LocationRegisterPageState extends State<LocationRegisterPage> {
           MaterialPageRoute(
             builder: (context) => NameBirthdayRegisterPage(
               phoneNumber: widget.phoneNumber,
+              password: widget.password,
               latitude: position.latitude,
               longitude: position.longitude,
             ),
