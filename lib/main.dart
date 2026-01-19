@@ -46,6 +46,13 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: FrontPage(title: appTitle),
+      routes: {
+        '/login': (context) => const FrontPage(
+          title: 'PairMe',
+        ), // Assuming FrontPage handles login or is the landing
+        // If you have a dedicated LoginPage, import and use it here.
+        // For now, mapping /login to FrontPage or wherever the flow starts.
+      },
     );
   }
 }

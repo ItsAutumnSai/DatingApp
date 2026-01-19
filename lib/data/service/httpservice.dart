@@ -57,6 +57,26 @@ class HttpService {
     }
   }
 
+  Future<http.Response> put(
+    String endpoint, {
+    dynamic body,
+    Map<String, String>? headers,
+  }) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final mergedHeaders = {..._defaultHeaders, ...?headers};
+
+    try {
+      final response = await http.put(
+        url,
+        headers: mergedHeaders,
+        body: body != null ? jsonEncode(body) : null,
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Failed to perform PUT request: $e');
+    }
+  }
+
   Future<String?> uploadImage(File file) async {
     final url = Uri.parse('$baseUrl/upload');
     final request = http.MultipartRequest('POST', url);

@@ -1,6 +1,8 @@
 import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:datingapp/data/service/httpservice.dart';
+import 'package:datingapp/presentation/settings/change_password_page.dart';
+import 'package:datingapp/presentation/settings/edit_profile_page.dart';
 import 'package:datingapp/presentation/widgets/profile_card.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -154,10 +156,54 @@ class _ProfilePageState extends State<ProfilePage> {
           style: TextStyle(
             color: Colors.redAccent,
             fontWeight: FontWeight.bold,
+            fontSize: 24,
           ),
         ),
         centerTitle: false,
         automaticallyImplyLeading: false,
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'logout') {
+                // Handle logout
+                UserSession().clearSession();
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/login',
+                  (Route<dynamic> route) => false,
+                );
+              } else if (value == 'edit') {
+                if (_userData != null) {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          EditProfilePage(userData: _userData!),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadProfile(); // Refresh profile if saved
+                  }
+                }
+              } else if (value == 'password') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ChangePasswordPage(),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(value: 'edit', child: Text('Edit User')),
+                const PopupMenuItem(
+                  value: 'password',
+                  child: Text('Change Password'),
+                ),
+                const PopupMenuItem(value: 'logout', child: Text('Logout')),
+              ];
+            },
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+          ),
+        ],
       ),
       body: ProfileCard(
         userData: _userData!,

@@ -56,8 +56,16 @@ def upload_file():
             unique_filename = f"{unique_id}.jpg" # Always save as jpg
             final_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             
-            # Open image using Pillow (handles HEIC via pillow_heif register_opener)
-            img = Image.open(file)
+            # Save incoming file to a temporary file first to ensure complete download
+            # and avoid "image file is truncated" errors from Pillow
+            import tempfile
+            fd, temp_path = tempfile.mkstemp()
+            os.close(fd)
+            file.save(temp_path)
+            
+            try:
+                # Open image using Pillow (handles HEIC via pillow_heif register_opener)
+                img = Image.open(temp_path)
             img = img.convert("RGB") # Convert to RGB for JPEG compatibility
             
             # 1. Resize if too large (max 1920px max dimension)
@@ -94,6 +102,10 @@ def upload_file():
             if 'final_path' in locals() and os.path.exists(final_path):
                 os.remove(final_path)
             return jsonify({"error": f"Image processing failed: {str(e)}"}), 500
+        finally:
+            # Clean up the temporary file
+            if 'temp_path' in locals() and os.path.exists(temp_path):
+                os.remove(temp_path)
         
     return jsonify({"error": "Upload failed"}), 500
 
@@ -163,6 +175,9 @@ class UserPrefs(db.Model):
     religion = db.Column(db.Integer)
     bio = db.Column(db.String(255))
     openingmove = db.Column(db.String(100))
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    lastlogin = db.Column(db.DateTime)
     # Handling spatial POINT can be complex. 
     # For now we'll imply it is managed/inserted via raw API or added later. 
     # To fully support it, we'd need GeoAlchemy2.
@@ -175,7 +190,10 @@ class UserPrefs(db.Model):
             'relationshipinterest': self.relationshipinterest,
             'is_smoke': self.is_smoke, 'is_drink': self.is_drink,
             'religion': self.religion, 'bio': self.bio,
-            'openingmove': self.openingmove
+            'openingmove': self.openingmove,
+            'lastlogin': self.lastlogin.isoformat() if self.lastlogin else None,
+            'latitude': self.latitude,
+            'longitude': self.longitude
         }
 
 # Routes
@@ -227,6 +245,17 @@ def login():
         pwd_hash = hashlib.sha512(password.encode('utf-8')).digest()
         
         if pwd_hash == user.passwordhash:
+             # Update Last Login
+             from datetime import datetime
+             prefs = UserPrefs.query.filter_by(userid=user.id).first()
+             if prefs:
+                 prefs.lastlogin = datetime.now()
+             else:
+                 prefs = UserPrefs(userid=user.id, lastlogin=datetime.now())
+                 db.session.add(prefs)
+             
+             db.session.commit()
+
              return jsonify({
                 "message": "Login successful", 
                 "user": user.to_dict()
@@ -235,6 +264,38 @@ def login():
              return jsonify({"error": "Invalid password"}), 401
     else:
         return jsonify({"error": "User not found"}), 404
+
+@app.route("/change_password", methods=['POST'])
+@require_api_key
+def change_password():
+    data = request.json
+    if not data or 'user_id' not in data or 'old_password' not in data or 'new_password' not in data:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    user_id = data['user_id']
+    old_password = data['old_password']
+    new_password = data['new_password']
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+        
+    import hashlib
+    # Verify old password
+    old_pwd_hash = hashlib.sha512(old_password.encode('utf-8')).digest()
+    if old_pwd_hash != user.passwordhash:
+        return jsonify({"error": "Incorrect old password"}), 401
+        
+    # Set new password
+    new_pwd_hash = hashlib.sha512(new_password.encode('utf-8')).digest()
+    user.passwordhash = new_pwd_hash
+    
+    try:
+        db.session.commit()
+        return jsonify({"message": "Password changed successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/uploads/<filename>')
 def get_photo(filename):
@@ -295,11 +356,13 @@ def create_user():
             sql = """
             INSERT INTO user_prefs (
                 userid, gender, height, genderinterest, relationshipinterest, 
-                is_smoke, is_drink, religion, bio, openingmove, geolocation
+                is_smoke, is_drink, religion, bio, openingmove, geolocation,
+                latitude, longitude
             ) VALUES (
                 :userid, :gender, :height, :genderinterest, :relationshipinterest,
                 :is_smoke, :is_drink, :religion, :bio, :openingmove,
-                ST_GeomFromText(:pt, 4326)
+                ST_GeomFromText(:pt, 4326),
+                :latitude, :longitude
             )
             """
             
@@ -316,13 +379,97 @@ def create_user():
                 'religion': pr.get('religion'),
                 'bio': pr.get('bio'),
                 'openingmove': pr.get('openingmove'),
-                'pt': pt_str
+                'pt': pt_str,
+                'latitude': lat,
+                'longitude': lon
             })
                 
         
         db.session.commit()
         return jsonify({"message": "User created", "user_id": new_user.id}), 201
         
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/users/<int:user_id>", methods=['PUT'])
+@require_api_key
+def update_user(user_id):
+    try:
+        data = request.get_json()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # 1. Update User (Name, etc.)
+        if 'name' in data:
+            user.name = data['name']
+        
+        # 2. Update User Prefs
+        if 'prefs' in data:
+            user_prefs_data = data['prefs']
+            prefs = UserPrefs.query.filter_by(userid=user_id).first()
+            if not prefs:
+                # Create if not exists (should theoretically exist)
+                prefs = UserPrefs(userid=user_id)
+                db.session.add(prefs)
+            
+            # Map fields
+            if 'bio' in user_prefs_data: prefs.bio = user_prefs_data['bio']
+            if 'openingmove' in user_prefs_data: prefs.openingmove = user_prefs_data['openingmove']
+            if 'gender' in user_prefs_data: prefs.gender = user_prefs_data['gender']
+            if 'height' in user_prefs_data: prefs.height = user_prefs_data['height']
+            if 'genderinterest' in user_prefs_data: prefs.genderinterest = user_prefs_data['genderinterest']
+            if 'relationshipinterest' in user_prefs_data: prefs.relationshipinterest = user_prefs_data['relationshipinterest']
+            if 'religion' in user_prefs_data: prefs.religion = user_prefs_data['religion']
+            if 'is_smoke' in user_prefs_data: prefs.is_smoke = user_prefs_data['is_smoke']
+            if 'is_drink' in user_prefs_data: prefs.is_drink = user_prefs_data['is_drink']
+            if 'latitude' in user_prefs_data: prefs.latitude = user_prefs_data['latitude']
+            if 'longitude' in user_prefs_data: prefs.longitude = user_prefs_data['longitude']
+
+        # 3. Update Photos
+        if 'photos' in data:
+            photos_data = data['photos']
+            user_photos = UserPhotos.query.filter_by(userid=user_id).first()
+            if not user_photos:
+                user_photos = UserPhotos(userid=user_id)
+                db.session.add(user_photos)
+            
+            # Update specific keys provided in map
+            if 'photo1' in photos_data: user_photos.photo1 = photos_data['photo1']
+            if 'photo2' in photos_data: user_photos.photo2 = photos_data['photo2']
+            if 'photo3' in photos_data: user_photos.photo3 = photos_data['photo3']
+            if 'photo4' in photos_data: user_photos.photo4 = photos_data['photo4']
+            if 'photo5' in photos_data: user_photos.photo5 = photos_data['photo5']
+
+        # 4. Update Hobbies
+        if 'hobbies' in data:
+            # Assuming 'hobbies' is a dict like {'hobby1': 1, ...} based on registration logic
+            # OR a list of IDs if we change frontend. Let's support the Dict as per AuthRepo
+            hobbies_map = data['hobbies']
+            
+            # Retrieve existing record or create new
+            user_hobbies = UserHobbies.query.filter_by(userid=user_id).first()
+            if not user_hobbies:
+                user_hobbies = UserHobbies(userid=user_id)
+                db.session.add(user_hobbies)
+
+            # Clear existing columns first (optional, but safer if we want to replace list)
+            # Or just overwrite based on keys 'hobby1'...'hobby5'
+            
+            # Map keys from frontend (hobby1..hobby5) to columns
+            if isinstance(hobbies_map, dict):
+                # Reset all first if needed, or just overwrite
+                user_hobbies.hobby1 = hobbies_map.get('hobby1', None)
+                user_hobbies.hobby2 = hobbies_map.get('hobby2', None)
+                user_hobbies.hobby3 = hobbies_map.get('hobby3', None)
+                user_hobbies.hobby4 = hobbies_map.get('hobby4', None)
+                user_hobbies.hobby5 = hobbies_map.get('hobby5', None)
+
+        db.session.commit()
+        return jsonify({"message": "User updated successfully"}), 200
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500

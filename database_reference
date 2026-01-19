@@ -1,0 +1,69 @@
+describe user;
++--------------+--------------+------+-----+---------+----------------+
+| Field        | Type         | Null | Key | Default | Extra          |
++--------------+--------------+------+-----+---------+----------------+
+| id           | int          | NO   | PRI | NULL    | auto_increment |
+| name         | varchar(15)  | NO   |     | NULL    |                |
+| email        | varchar(100) | YES  |     | NULL    |                |
+| passwordhash | binary(64)   | NO   |     | NULL    |                |
+| dateofbirth  | date         | NO   |     | NULL    |                |
+| phonenumber  | varchar(20)  | YES  |     | NULL    |                |
++--------------+--------------+------+-----+---------+----------------+
+
+user_prefs;
++----------------------+--------------+------+-----+---------+----------------+
+| Field                | Type         | Null | Key | Default | Extra          |
++----------------------+--------------+------+-----+---------+----------------+
+| id                   | int          | NO   | PRI | NULL    | auto_increment |
+| userid               | int          | YES  | MUL | NULL    |                |
+| gender               | tinyint      | YES  |     | NULL    |                |
+| height               | int          | YES  |     | NULL    |                |
+| genderinterest       | tinyint      | YES  |     | NULL    |                |
+| relationshipinterest | tinyint      | YES  |     | NULL    |                |
+| is_smoke             | tinyint(1)   | YES  |     | NULL    |                |
+| is_drink             | tinyint(1)   | YES  |     | NULL    |                |
+| religion             | tinyint      | YES  |     | NULL    |                |
+| bio                  | varchar(255) | YES  |     | NULL    |                |
+| openingmove          | varchar(100) | YES  |     | NULL    |                |
+| geolocation          | point        | NO   | MUL | NULL    |                |
+| lastlogin            | date         | YES  |     | NULL    |                |
+| latitude             | float        | YES  |     | NULL    |                |
+| longitude            | float        | YES  |     | NULL    |                |
++----------------------+--------------+------+-----+---------+----------------+
+
+user_photos;
++--------+--------------+------+-----+---------+----------------+
+| Field  | Type         | Null | Key | Default | Extra          |
++--------+--------------+------+-----+---------+----------------+
+| id     | int          | NO   | PRI | NULL    | auto_increment |
+| userid | int          | YES  | MUL | NULL    |                |
+| photo1 | varchar(255) | NO   |     | NULL    |                |
+| photo2 | varchar(255) | YES  |     | NULL    |                |
+| photo3 | varchar(255) | YES  |     | NULL    |                |
+| photo4 | varchar(255) | YES  |     | NULL    |                |
+| photo5 | varchar(255) | YES  |     | NULL    |                |
++--------+--------------+------+-----+---------+----------------+
+
+user_hobbies;
++--------+---------+------+-----+---------+----------------+
+| Field  | Type    | Null | Key | Default | Extra          |
++--------+---------+------+-----+---------+----------------+
+| id     | int     | NO   | PRI | NULL    | auto_increment |
+| userid | int     | YES  | MUL | NULL    |                |
+| hobby1 | tinyint | YES  |     | NULL    |                |
+| hobby2 | tinyint | YES  |     | NULL    |                |
+| hobby3 | tinyint | YES  |     | NULL    |                |
+| hobby4 | tinyint | YES  |     | NULL    |                |
+| hobby5 | tinyint | YES  |     | NULL    |                |
++--------+---------+------+-----+---------+----------------+
+
+describe user_like;
++------------+------+------+-----+---------+----------------+
+| Field      | Type | Null | Key | Default | Extra          |
++------------+------+------+-----+---------+----------------+
+| id         | int  | NO   | PRI | NULL    | auto_increment |
+| userid     | int  | YES  | MUL | NULL    |                |
+| wholikesid | int  | YES  |     | NULL    |                |
+| likedate   | date | YES  |     | NULL    |                |
++------------+------+------+-----+---------+----------------+
+

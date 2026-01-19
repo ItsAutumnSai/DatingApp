@@ -1,8 +1,11 @@
 import 'package:datingapp/data/model/gender_model.dart';
 import 'package:datingapp/data/model/hobby_model.dart';
+import 'package:datingapp/data/model/relationship_interest_model.dart';
+import 'package:datingapp/data/model/religion_model.dart';
 import 'package:datingapp/data/service/httpservice.dart';
 import 'package:datingapp/presentation/widgets/info_card.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'dart:io';
 
 class ProfileCard extends StatelessWidget {
@@ -40,6 +43,17 @@ class ProfileCard extends StatelessWidget {
     final bio = userData['prefs']?['bio'] ?? 'No bio';
     final openingMove = userData['prefs']?['openingmove'] ?? 'No opening move';
     final gender = GenderModel.getLabel(userData['prefs']?['gender']);
+    final height = userData['prefs']?['height'] ?? 0;
+    final isSmoker = userData['prefs']?['is_smoke'];
+    final isDrinker = userData['prefs']?['is_drink'];
+    final religion = ReligionModel.getLabel(userData['prefs']?['religion']);
+    final genderInterest = GenderModel.getLabel(
+      userData['prefs']?['genderinterest'],
+    );
+    final relationshipInterest = RelationshipInterestModel.getLabel(
+      userData['prefs']?['relationshipinterest'],
+    );
+
     final hobbies1 = HobbyModel.getLabel(userData['hobbies']?['hobby1']);
     final hobbies2 = HobbyModel.getLabel(userData['hobbies']?['hobby2']);
     final hobbies3 = HobbyModel.getLabel(userData['hobbies']?['hobby3']);
@@ -80,26 +94,68 @@ class ProfileCard extends StatelessWidget {
                 ),
               ),
 
-              // Name, Age Overlay
+              // Name, Age and City Overlay
+              // Name, Age and Lat/Long Overlay
               Positioned(
-                bottom: 30,
-                left: 30,
-                child: Text(
-                  "$name, $age",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(0, 1),
-                        blurRadius: 2,
-                        color: Colors.black54,
+                bottom: 40,
+                left: 40,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "$name, $age",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(0, 1),
+                            blurRadius: 20,
+                            color: Colors.black,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+
+              // Last Login Overlay
+              if (userData['lastlogin'] != null)
+                Positioned(
+                  top: 40,
+                  right: 30,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(150),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.access_time,
+                          color: Colors.greenAccent,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          _formatLastLogin(userData['lastlogin']),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
 
@@ -124,6 +180,66 @@ class ProfileCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                 ],
+
+                // General
+                InfoCard(
+                  title: "General",
+                  child: Column(
+                    children: [
+                      _buildRow("Gender", gender),
+                      _buildDivider(),
+                      _buildRow(
+                        "Height",
+                        height > 0 ? "$height cm" : "Unknown",
+                      ),
+                      _buildDivider(),
+                      _buildRow("Religion", religion),
+                      _buildDivider(),
+                      _buildRow(
+                        "Smoking",
+                        isSmoker == true
+                            ? "Yes"
+                            : (isSmoker == false ? "No" : "Unknown"),
+                      ),
+                      _buildDivider(),
+                      _buildRow(
+                        "Drinking",
+                        isDrinker == true
+                            ? "Yes"
+                            : (isDrinker == false ? "No" : "Unknown"),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Hobbies
+                InfoCard(
+                  title: "Hobbies",
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 4.0,
+                    children: [
+                      if (hobbies1 != 'Unknown') _buildChip(hobbies1),
+                      if (hobbies2 != 'Unknown') _buildChip(hobbies2),
+                      if (hobbies3 != 'Unknown') _buildChip(hobbies3),
+                      if (hobbies4 != 'Unknown') _buildChip(hobbies4),
+                      if (hobbies5 != 'Unknown') _buildChip(hobbies5),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Looking For
+                InfoCard(
+                  title: "Looking For",
+                  child: Column(
+                    children: [
+                      _buildRow("Interested In", genderInterest),
+                      _buildDivider(),
+                      _buildRow("Relationship", relationshipInterest),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
 
                 // Opening Move (InfoCard)
                 if (openingMove.isNotEmpty) ...[
@@ -166,39 +282,9 @@ class ProfileCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                 ],
-                // Gender (Wrapped in InfoCard)
-                InfoCard(
-                  title: "Gender",
-                  child: Text(
-                    gender,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Hobbies (InfoCard)
-                InfoCard(
-                  title: "Hobbies",
-                  child: Wrap(
-                    spacing: 8.0,
-                    runSpacing: 4.0,
-                    children: [
-                      if (hobbies1 != 'Unknown') _buildChip(hobbies1),
-                      if (hobbies2 != 'Unknown') _buildChip(hobbies2),
-                      if (hobbies3 != 'Unknown') _buildChip(hobbies3),
-                      if (hobbies4 != 'Unknown') _buildChip(hobbies4),
-                      if (hobbies5 != 'Unknown') _buildChip(hobbies5),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
 
           // 3. Remaining Photos
           if (otherPhotoKeys.isNotEmpty)
@@ -223,6 +309,34 @@ class ProfileCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildRow(String label, String value) {
+    if (value == 'Unknown' || value.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.black54, fontSize: 15),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 15,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return const Divider(height: 1, color: Colors.black12);
   }
 
   Widget _buildChip(String label) {
@@ -281,5 +395,26 @@ class ProfileCard extends StatelessWidget {
         child: const Center(child: Text("No Image")),
       );
     }
+  }
+}
+
+String _formatLastLogin(String? isoString) {
+  if (isoString == null) return "Unknown";
+  try {
+    final date = DateTime.parse(
+      isoString,
+    ).toLocal(); // Backend sends UTC or Server time
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inMinutes < 60) {
+      return "Active ${diff.inMinutes}m ago";
+    } else if (diff.inHours < 24) {
+      return "Active ${diff.inHours}h ago";
+    } else {
+      return "Last: ${DateFormat('MMM d').format(date)}";
+    }
+  } catch (e) {
+    return "Unknown";
   }
 }

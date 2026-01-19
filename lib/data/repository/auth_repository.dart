@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:datingapp/data/model/user_model.dart';
 import 'package:datingapp/data/model/user_registration_data.dart';
 import 'package:datingapp/data/service/httpservice.dart';
@@ -95,6 +96,51 @@ class AuthRepository {
       }
     } catch (e) {
       throw Exception('Failed to load profile: $e');
+    }
+  }
+
+  Future<void> updateUser(int userId, Map<String, dynamic> data) async {
+    try {
+      final response = await _httpService.put('/users/$userId', body: data);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to update profile: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to update profile: $e');
+    }
+  }
+
+  Future<String?> uploadPhoto(File file) async {
+    try {
+      return await _httpService.uploadImage(file);
+    } catch (e) {
+      throw Exception('Failed to upload photo: $e');
+    }
+  }
+
+  Future<void> changePassword(
+    int userId,
+    String oldPassword,
+    String newPassword,
+  ) async {
+    try {
+      final response = await _httpService.post(
+        '/change_password',
+        body: {
+          'user_id': userId,
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Failed to change password: $e');
     }
   }
 }
