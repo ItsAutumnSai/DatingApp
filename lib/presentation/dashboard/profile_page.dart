@@ -16,15 +16,122 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final AuthRepository _authRepository = AuthRepository();
   Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+  String? _error;
+  File? _profileImageFile;
 
   @override
   void initState() {
     super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final userId = UserSession().userId;
+    if (userId == null) {
+      setState(() {
+        _error = "No user logged in";
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final data = await _authRepository.getUserProfile(userId);
+      setState(() {
+        _userData = data;
+        _isLoading = false;
+      });
+
+      if (_userData != null &&
+          _userData!['photos'] != null &&
+          _userData!['photos']['photo1'] != null) {
+        _cacheImage(_userData!['photos']['photo1']);
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _cacheImage(String filename) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final directory = Directory('${appDir.path}/static/uploads');
+
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      } else {}
+
+      final file = File('${directory.path}/$filename');
+
+      if (await file.exists()) {
+        setState(() {
+          _profileImageFile = file;
+        });
+        return;
+      }
+
+      // Download if not exists
+      final url = Uri.parse('${HttpService().baseUrl}/uploads/$filename');
+
+      // Wait a bit to let Image.network (UI) have priority on the server
+      await Future.delayed(const Duration(seconds: 2));
+
+      http.Response? response;
+      int attempts = 0;
+      while (attempts < 3) {
+        try {
+          attempts++;
+          // Use Connection: Keep-Alive as requested
+          response = await http
+              .get(url, headers: {'Connection': 'Keep-Alive'})
+              .timeout(
+                const Duration(seconds: 20),
+                onTimeout: () {
+                  throw Exception('Connection timed out');
+                },
+              );
+
+          if (response.statusCode == 200) {
+            break; // Success
+          }
+        } catch (e) {
+          if (attempts == 3) rethrow;
+          await Future.delayed(Duration(seconds: 1)); // Wait before retry
+        }
+      }
+
+      if (response != null && response.statusCode == 200) {
+        await file.writeAsBytes(response.bodyBytes);
+
+        if (mounted) {
+          setState(() {
+            _profileImageFile = file;
+          });
+        }
+      } else {
+        if (response != null) {}
+      }
+    } catch (e, stackTrace) {}
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(body: Center(child: Text('Error: $_error')));
+    }
+
     if (_userData == null) {
       return const Scaffold(body: Center(child: Text("No profile data found")));
     }
@@ -51,7 +158,18 @@ class _ProfilePageState extends State<ProfilePage> {
             width: double.infinity,
             child: Stack(
               children: [
-                if (photo1 != null)
+                if (_profileImageFile != null)
+                  Positioned.fill(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 15.0,
+                        vertical: 25.0,
+                      ),
+                      child: Image.file(_profileImageFile!, fit: BoxFit.cover),
+                    ),
+                  )
+                else if (photo1 != null)
+                  // Fallback to network image if local file is not yet ready
                   Positioned.fill(
                     child: Container(
                       margin: const EdgeInsets.symmetric(
@@ -59,7 +177,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         vertical: 25.0,
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(5),
                         child: Image.network(
                           '${HttpService().baseUrl}/uploads/$photo1',
                           fit: BoxFit.cover,
