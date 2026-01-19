@@ -128,6 +128,38 @@ class _FrontPageState extends State<FrontPage> {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text(
+                        "Disclaimer",
+                        style: TextStyle(fontSize: 20),
+                      ),
+                      content: const Text(
+                        "Please respect everyone. Sexual harassment and explicit content are strictly prohibited.",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text("OK"),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: const Text(
+                  "Disclaimer",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.white,
+                  ),
+                ),
+              ),
               const SizedBox(height: 50),
             ],
           ),

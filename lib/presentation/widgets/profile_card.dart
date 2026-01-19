@@ -122,7 +122,7 @@ class ProfileCard extends StatelessWidget {
               ),
 
               // Last Login Overlay
-              if (userData['lastlogin'] != null)
+              if (userData['prefs']['lastlogin'] != null)
                 Positioned(
                   top: 40,
                   right: 30,
@@ -140,15 +140,15 @@ class ProfileCard extends StatelessWidget {
                       children: [
                         const Icon(
                           Icons.access_time,
-                          color: Colors.greenAccent,
-                          size: 14,
+                          color: Colors.white,
+                          size: 16,
                         ),
                         const SizedBox(width: 5),
                         Text(
                           _formatLastLogin(userData['lastlogin']),
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

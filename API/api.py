@@ -63,9 +63,8 @@ def upload_file():
             os.close(fd)
             file.save(temp_path)
             
-            try:
-                # Open image using Pillow (handles HEIC via pillow_heif register_opener)
-                img = Image.open(temp_path)
+            # Open image using Pillow (handles HEIC via pillow_heif register_opener)
+            img = Image.open(temp_path)
             img = img.convert("RGB") # Convert to RGB for JPEG compatibility
             
             # 1. Resize if too large (max 1920px max dimension)

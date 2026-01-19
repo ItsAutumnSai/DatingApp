@@ -17,6 +17,7 @@ class UserRegistrationData {
   String? bio;
   String? openingMove;
   String password;
+  String? lastLogin;
 
   UserRegistrationData({
     this.name = '',
@@ -37,6 +38,7 @@ class UserRegistrationData {
     this.bio,
     this.openingMove,
     this.password = '',
+    this.lastLogin,
   });
 
   @override
