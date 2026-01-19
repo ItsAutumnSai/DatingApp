@@ -168,18 +168,32 @@ def get_user(user_id):
     
     return jsonify(data)
 
-@app.route("/users/search", methods=['GET'])
+@app.route("/login", methods=['POST'])
 @require_api_key
-def search_users():
-    phone = request.args.get('phonenumber')
-    if not phone:
-        return jsonify({"error": "Missing search parameter"}), 400
+def login():
+    data = request.json
+    if not data or 'phonenumber' not in data or 'password' not in data:
+        return jsonify({"error": "Missing phone number or password"}), 400
         
+    phone = data['phonenumber']
+    password = data['password']
+    
     user = User.query.filter_by(phonenumber=phone).first()
+    
     if user:
-        return jsonify(user.to_dict())
+        import hashlib
+        # Hash the provided password to compare with stored hash
+        pwd_hash = hashlib.sha512(password.encode('utf-8')).digest()
+        
+        if pwd_hash == user.passwordhash:
+             return jsonify({
+                "message": "Login successful", 
+                "user": user.to_dict()
+            }), 200
+        else:
+             return jsonify({"error": "Invalid password"}), 401
     else:
-        return jsonify({"message": "User not found"}), 404
+        return jsonify({"error": "User not found"}), 404
 
 @app.route("/users", methods=['POST'])
 @require_api_key

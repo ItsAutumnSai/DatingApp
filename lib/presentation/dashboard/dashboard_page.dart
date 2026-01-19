@@ -25,10 +25,11 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _pages),
+      backgroundColor: Colors.white,
       bottomNavigationBar: Theme(
         data: ThemeData(
           splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
+          highlightColor: Colors.redAccent[100],
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,

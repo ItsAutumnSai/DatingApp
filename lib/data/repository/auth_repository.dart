@@ -6,26 +6,24 @@ import 'package:datingapp/data/service/httpservice.dart';
 class AuthRepository {
   final HttpService _httpService = HttpService();
 
-  Future<User?> checkUserExists(String phoneNumber) async {
+  Future<User?> login(String phoneNumber, String password) async {
     try {
-      final response = await _httpService.get(
-        '/users/search?phonenumber=${Uri.encodeComponent(phoneNumber)}',
-      );
+      final body = {'phonenumber': phoneNumber, 'password': password};
+
+      final response = await _httpService.post('/login', body: body);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return User.fromJson(data);
+        return User.fromJson(data['user']);
+      } else if (response.statusCode == 401) {
+        throw Exception('Invalid password');
       } else if (response.statusCode == 404) {
-        return null;
+        throw Exception('User not found');
       } else {
-        // Log error or throw specific exception
-        throw Exception(
-          'Failed to check user existence: ${response.statusCode}',
-        );
+        throw Exception('Login failed: ${response.statusCode}');
       }
     } catch (e) {
-      // Re-throw or handle error
-      throw Exception('Network error during user check: $e');
+      throw Exception('Login failed: $e');
     }
   }
 
