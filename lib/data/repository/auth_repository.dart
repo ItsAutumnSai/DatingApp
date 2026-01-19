@@ -143,4 +143,35 @@ class AuthRepository {
       throw Exception('Failed to change password: $e');
     }
   }
+
+  Future<List<dynamic>> getExploreUsers(int currentUserId) async {
+    try {
+      final response = await _httpService.get(
+        '/explore?current_user_id=$currentUserId',
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load explore users: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load explore users: $e');
+    }
+  }
+
+  Future<void> likeUser(int targetUserId, int sourceUserId) async {
+    try {
+      final response = await _httpService.post(
+        '/like',
+        body: {'target_user_id': targetUserId, 'source_user_id': sourceUserId},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to like user: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to like user: $e');
+    }
+  }
 }

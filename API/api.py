@@ -161,6 +161,13 @@ class UserPhotos(db.Model):
             'photo5': self.photo5
         }
 
+class UserLike(db.Model):
+    __tablename__ = 'user_like'
+    id = db.Column(db.Integer, primary_key=True)
+    userid = db.Column(db.Integer) # Target User
+    wholikesid = db.Column(db.Integer) # Source User
+    likedate = db.Column(db.Date) # Date of like
+
 class UserPrefs(db.Model):
     __tablename__ = 'user_prefs'
     id = db.Column(db.Integer, primary_key=True)
@@ -263,6 +270,62 @@ def login():
              return jsonify({"error": "Invalid password"}), 401
     else:
         return jsonify({"error": "User not found"}), 404
+
+@app.route("/explore", methods=['GET'])
+@require_api_key
+def explore_users():
+    current_user_id = request.args.get('current_user_id')
+    if not current_user_id:
+        return jsonify({"error": "Missing current_user_id"}), 400
+    
+    # Logic: Get users who I haven't liked yet, and exclude myself
+    # Access: userid (Target), wholikesid (Me)
+    
+    # Subquery: Users I have already liked
+    liked_subquery = db.session.query(UserLike.userid).filter(UserLike.wholikesid == current_user_id)
+    
+    # Query: Users NOT in subquery AND NOT me
+    users = User.query.filter(
+        User.id != current_user_id,
+        ~User.id.in_(liked_subquery)
+    ).limit(30).all() # Limit to prevent overload
+    
+    results = []
+    for user in users:
+        # Construct full profile for card
+        hobbies = UserHobbies.query.filter_by(userid=user.id).first()
+        photos = UserPhotos.query.filter_by(userid=user.id).first()
+        prefs = UserPrefs.query.filter_by(userid=user.id).first()
+        
+        u_dict = user.to_dict()
+        if hobbies: u_dict['hobbies'] = hobbies.to_dict()
+        if photos: u_dict['photos'] = photos.to_dict()
+        if prefs: u_dict['prefs'] = prefs.to_dict()
+        results.append(u_dict)
+        
+    return jsonify(results)
+
+@app.route("/like", methods=['POST'])
+@require_api_key
+def like_user():
+    data = request.json
+    target_id = data.get('target_user_id')
+    source_id = data.get('source_user_id')
+    
+    if not target_id or not source_id:
+        return jsonify({"error": "Missing IDs"}), 400
+        
+    # Check if already liked
+    existing = UserLike.query.filter_by(userid=target_id, wholikesid=source_id).first()
+    if existing:
+        return jsonify({"message": "Already liked"}), 200
+        
+    from datetime import date
+    new_like = UserLike(userid=target_id, wholikesid=source_id, likedate=date.today())
+    db.session.add(new_like)
+    db.session.commit()
+    
+    return jsonify({"message": "Liked"}), 200
 
 @app.route("/change_password", methods=['POST'])
 @require_api_key
