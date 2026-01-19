@@ -145,7 +145,7 @@ class ProfileCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          _formatLastLogin(userData['lastlogin']),
+                          _formatLastLogin(userData['prefs']['lastlogin']),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,

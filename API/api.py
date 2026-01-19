@@ -203,6 +203,11 @@ class UserPrefs(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     lastlogin = db.Column(db.DateTime)
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    lastlogin = db.Column(db.DateTime)
+    bondedwith = db.Column(db.Integer) # ID of the user they are bonded with (Exclusive)
+
     # Handling spatial POINT can be complex. 
     # For now we'll imply it is managed/inserted via raw API or added later. 
     # To fully support it, we'd need GeoAlchemy2.
@@ -216,9 +221,9 @@ class UserPrefs(db.Model):
             'is_smoke': self.is_smoke, 'is_drink': self.is_drink,
             'religion': self.religion, 'bio': self.bio,
             'openingmove': self.openingmove,
+            'latitude': self.latitude, 'longitude': self.longitude,
             'lastlogin': self.lastlogin.isoformat() if self.lastlogin else None,
-            'latitude': self.latitude,
-            'longitude': self.longitude
+            'bondedwith': self.bondedwith
         }
 
 # Routes
@@ -243,12 +248,12 @@ def get_user(user_id):
     data = user.to_dict()
     if hobbies: data['hobbies'] = hobbies.to_dict()
     if photos: data['photos'] = photos.to_dict()
-    if prefs: data['prefs'] = prefs.to_dict()
-    
-    
-    if hobbies: data['hobbies'] = hobbies.to_dict()
-    if photos: data['photos'] = photos.to_dict()
-    if prefs: data['prefs'] = prefs.to_dict()
+    if prefs: 
+        data['prefs'] = prefs.to_dict()
+        if prefs.bondedwith:
+            partner = User.query.get(prefs.bondedwith)
+            if partner:
+                data['bonded_partner_name'] = partner.name
     
     return jsonify(data)
 
@@ -297,6 +302,11 @@ def explore_users():
     if not current_user_id:
         return jsonify({"error": "Missing current_user_id"}), 400
     
+    # Check if I am bonded
+    my_prefs = UserPrefs.query.filter_by(userid=current_user_id).first()
+    if my_prefs and my_prefs.bondedwith:
+        return jsonify({"message": "You are bonded!", "users": []}), 200 # Return empty list if bonded
+    
     # Logic: Get users who I haven't liked yet, and exclude myself
     # Access: userid (Target), wholikesid (Me)
     
@@ -308,12 +318,16 @@ def explore_users():
     sent_to = db.session.query(ChatHistory.userid2).filter(ChatHistory.userid1 == current_user_id)
     received_from = db.session.query(ChatHistory.userid1).filter(ChatHistory.userid2 == current_user_id)
     
-    # Query: Users NOT in liked_subquery AND NOT in chat history AND NOT me
+    # Subquery: Users who are BONDED (exclude them)
+    bonded_users = db.session.query(UserPrefs.userid).filter(UserPrefs.bondedwith != None)
+    
+    # Query: Users NOT in liked_subquery AND NOT in chat history AND NOT me AND NOT bonded
     users = User.query.filter(
         User.id != current_user_id,
         ~User.id.in_(liked_subquery),
         ~User.id.in_(sent_to),
-        ~User.id.in_(received_from)
+        ~User.id.in_(received_from),
+        ~User.id.in_(bonded_users)
     ).order_by(func.random()).limit(30).all() # Limit to prevent overload
     
     results = []
@@ -329,7 +343,7 @@ def explore_users():
         if prefs: u_dict['prefs'] = prefs.to_dict()
         results.append(u_dict)
         
-    return jsonify(results)
+    return jsonify(results), 200
 
 @app.route("/like", methods=['POST'])
 @require_api_key
@@ -341,6 +355,16 @@ def like_user():
     if not target_id or not source_id:
         return jsonify({"error": "Missing IDs"}), 400
         
+    # Check if target is bonded
+    target_prefs = UserPrefs.query.filter_by(userid=target_id).first()
+    if target_prefs and target_prefs.bondedwith:
+        return jsonify({"error": "User is bonded"}), 403
+    
+    # Check if I am bonded
+    my_prefs = UserPrefs.query.filter_by(userid=source_id).first()
+    if my_prefs and my_prefs.bondedwith:
+         return jsonify({"error": "You are bonded"}), 403
+
     # Check if already liked
     existing = UserLike.query.filter_by(userid=target_id, wholikesid=source_id).first()
     if existing:
@@ -762,6 +786,55 @@ def update_user(user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+@app.route("/bond/confirm", methods=['POST'])
+@require_api_key
+def confirm_bond():
+    data = request.json
+    user1 = data.get('user_id_1')
+    user2 = data.get('user_id_2')
+    
+    if not user1 or not user2:
+        return jsonify({"error": "Missing IDs"}), 400
+        
+    # Check if either are already bonded
+    p1 = UserPrefs.query.filter_by(userid=user1).first()
+    p2 = UserPrefs.query.filter_by(userid=user2).first()
+    
+    if not p1 or not p2:
+        return jsonify({"error": "Prefs not found"}), 404
+        
+    if p1.bondedwith or p2.bondedwith:
+        return jsonify({"error": "One or both users are already bonded"}), 400
+        
+    p1.bondedwith = user2
+    p2.bondedwith = user1
+    db.session.commit()
+    
+    return jsonify({"message": "Bond confirmed!"}), 200
+
+@app.route("/bond/break", methods=['POST'])
+@require_api_key
+def break_bond():
+    data = request.json
+    userid = data.get('user_id')
+    
+    if not userid:
+        return jsonify({"error": "Missing ID"}), 400
+        
+    prefs = UserPrefs.query.filter_by(userid=userid).first()
+    if not prefs or not prefs.bondedwith:
+         return jsonify({"message": "Not bonded"}), 200
+         
+    partner_id = prefs.bondedwith
+    partner_prefs = UserPrefs.query.filter_by(userid=partner_id).first()
+    
+    prefs.bondedwith = None
+    if partner_prefs:
+        partner_prefs.bondedwith = None
+        
+    db.session.commit()
+    return jsonify({"message": "Bond broken"}), 200
 
 if __name__ == "__main__":
     app.run(debug=True, threaded=True, host='0.0.0.0')

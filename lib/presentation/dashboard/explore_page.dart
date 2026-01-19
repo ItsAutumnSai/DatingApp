@@ -26,10 +26,13 @@ class _ExplorePageState extends State<ExplorePage> {
     _loadUsers();
   }
 
+  bool _isBonded = false;
+
   Future<void> _loadUsers() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _isBonded = false;
     });
 
     try {
@@ -37,10 +40,22 @@ class _ExplorePageState extends State<ExplorePage> {
       if (userId == null) {
         throw Exception("User not logged in");
       }
-      final users = await _authRepository.getExploreUsers(userId);
-      setState(() {
-        _users = users;
-      });
+      final result = await _authRepository.getExploreUsers(userId);
+
+      if (result is Map &&
+          result.containsKey('message') &&
+          result['message'].toString().contains('bonded')) {
+        setState(() {
+          _isBonded = true;
+          _users = [];
+        });
+      } else if (result is List) {
+        setState(() {
+          _users = result;
+        });
+      } else {
+        throw Exception("Unexpected response format");
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -160,6 +175,33 @@ class _ExplorePageState extends State<ExplorePage> {
             children: [
               Text("Error: $_errorMessage"),
               ElevatedButton(onPressed: _loadUsers, child: const Text("Retry")),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_isBonded) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.favorite, size: 80, color: Colors.pinkAccent),
+              const SizedBox(height: 20),
+              const Text(
+                "Happily Bonded! \u2764\ufe0f",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.pink,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "No more swiping for you.",
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
             ],
           ),
         ),

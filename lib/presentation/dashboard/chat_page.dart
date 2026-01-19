@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:datingapp/data/model/user_session.dart';
 import 'package:datingapp/data/repository/auth_repository.dart';
 import 'package:datingapp/data/service/httpservice.dart';
@@ -78,17 +79,40 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> _sendMessage() async {
-    final text = _messageController.text.trim();
+  Future<void> _sendBondRequest() async {
+    // Send a special message
+    await _sendMessage(customText: "BOND_REQUEST");
+  }
+
+  Future<void> _acceptBond() async {
+    try {
+      final myId = UserSession().userId;
+      if (myId == null) return;
+
+      await _authRepository.confirmBond(myId, widget.partnerId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You are now Bonded! \u2764\ufe0f")),
+      );
+      // Maybe navigate to a success page or refresh
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to bond: $e")));
+    }
+  }
+
+  Future<void> _sendMessage({String? customText}) async {
+    final text = customText ?? _messageController.text.trim();
     if (text.isEmpty) return;
 
-    _messageController.clear();
+    if (customText == null) _messageController.clear();
+
     try {
       final myId = UserSession().userId;
       if (myId == null) return;
 
       await _authRepository.sendMessage(myId, widget.partnerId, text);
-      _loadMessages(refresh: true); // Reload immediately
+      _loadMessages(refresh: true);
       _scrollToBottom();
     } catch (e) {
       debugPrint("Error sending message: $e");
@@ -100,6 +124,10 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if eligible for Seal the Deal (e.g. 5+ messages)
+    // And I am the one viewing (logic: just show if > 5 messages)
+    bool canSealTheDeal = _messages.length >= 5;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -125,6 +153,41 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ],
         ),
+        actions: [
+          if (canSealTheDeal)
+            IconButton(
+              icon: const Icon(Icons.volunteer_activism, color: Colors.pink),
+              tooltip: "Seal the Deal?",
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Seal the Deal? \uD83D\uDC8D"),
+                    content: const Text(
+                      "Ready to make it official? This will send a bond request.",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Cancel"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.pink,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _sendBondRequest();
+                        },
+                        child: const Text("Send Request"),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -140,6 +203,50 @@ class _ChatPageState extends State<ChatPage> {
                     itemBuilder: (context, index) {
                       final msg = _messages[index];
                       final isMe = msg['userid1'] == UserSession().userId;
+                      final messageText = msg['message'] ?? '';
+                      final isBondRequest = messageText == "BOND_REQUEST";
+
+                      if (isBondRequest) {
+                        return Align(
+                          alignment: Alignment.center,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.pink[50],
+                              border: Border.all(color: Colors.pink),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isMe
+                                      ? "You sent a Bond Request!"
+                                      : "${widget.partnerName} wants to Bond!",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.pink,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                if (!isMe)
+                                  ElevatedButton(
+                                    onPressed: _acceptBond,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.pink,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text(
+                                      "Accept Bond \u2764\ufe0f",
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
                       return Align(
                         alignment: isMe
                             ? Alignment.centerRight
@@ -155,7 +262,7 @@ class _ChatPageState extends State<ChatPage> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            msg['message'] ?? '',
+                            messageText,
                             style: TextStyle(
                               color: isMe ? Colors.white : Colors.black,
                             ),

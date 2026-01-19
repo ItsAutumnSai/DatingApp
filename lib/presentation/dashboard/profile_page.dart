@@ -148,6 +148,9 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     // Use the reusable ProfileCard widget
+    final isBonded = _userData!['prefs']?['bondedwith'] != null;
+    final partnerName = _userData!['bonded_partner_name'] ?? 'Unknown';
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -165,13 +168,55 @@ class _ProfilePageState extends State<ProfilePage> {
           PopupMenuButton<String>(
             onSelected: (value) async {
               if (value == 'logout') {
-                // Handle logout
+                // ... logout logic
                 UserSession().clearSession();
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   '/login',
                   (Route<dynamic> route) => false,
                 );
+              } else if (value == 'break_bond') {
+                // Break bond logic
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Break Bond? \uD83D\uDC94"),
+                    content: Text(
+                      "Are you sure you want to break your bond with $partnerName?",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text("Break Bond"),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true && mounted) {
+                  try {
+                    final userId = UserSession().userId;
+                    if (userId != null) {
+                      await _authRepository.breakBond(userId);
+                      _loadProfile(); // Refresh
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Bond broken.")),
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to break bond: $e")),
+                    );
+                  }
+                }
               } else if (value == 'edit') {
+                // ... edit logic
                 if (_userData != null) {
                   final result = await Navigator.of(context).push(
                     MaterialPageRoute(
@@ -180,7 +225,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   );
                   if (result == true) {
-                    _loadProfile(); // Refresh profile if saved
+                    _loadProfile();
                   }
                 }
               } else if (value == 'password') {
@@ -190,7 +235,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 );
               } else if (value == 'delete') {
-                // Confirm delete
+                // ... delete logic
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -239,6 +284,14 @@ class _ProfilePageState extends State<ProfilePage> {
             },
             itemBuilder: (BuildContext context) {
               return [
+                if (isBonded)
+                  const PopupMenuItem(
+                    value: 'break_bond',
+                    child: Text(
+                      'Break Bond',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
                 const PopupMenuItem(value: 'edit', child: Text('Edit User')),
                 const PopupMenuItem(
                   value: 'password',
@@ -258,10 +311,31 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: ProfileCard(
-        userData: _userData!,
-        cachedPhotos: _cachedPhotos,
-        isCurrentUser: true,
+      body: Column(
+        children: [
+          if (isBonded)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Colors.pinkAccent,
+              child: Text(
+                "Taken by $partnerName \u2764\ufe0f",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          Expanded(
+            child: ProfileCard(
+              userData: _userData!,
+              cachedPhotos: _cachedPhotos,
+              isCurrentUser: true,
+            ),
+          ),
+        ],
       ),
     );
   }

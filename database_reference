@@ -29,6 +29,7 @@ user_prefs;
 | lastlogin            | date         | YES  |     | NULL    |                |
 | latitude             | float        | YES  |     | NULL    |                |
 | longitude            | float        | YES  |     | NULL    |                |
+| bondedwith           | int          | YES  |     | NULL    |                |
 +----------------------+--------------+------+-----+---------+----------------+
 
 user_photos;

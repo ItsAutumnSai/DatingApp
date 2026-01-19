@@ -144,7 +144,7 @@ class AuthRepository {
     }
   }
 
-  Future<List<dynamic>> getExploreUsers(int currentUserId) async {
+  Future<dynamic> getExploreUsers(int currentUserId) async {
     try {
       final response = await _httpService.get(
         '/explore?current_user_id=$currentUserId',
@@ -210,6 +210,36 @@ class AuthRepository {
     }
   }
 
+  Future<void> confirmBond(int user1, int user2) async {
+    try {
+      final response = await _httpService.post(
+        '/bond/confirm',
+        body: {'user_id_1': user1, 'user_id_2': user2},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to confirm bond: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to confirm bond: $e');
+    }
+  }
+
+  Future<void> breakBond(int userId) async {
+    try {
+      final response = await _httpService.post(
+        '/bond/break',
+        body: {'user_id': userId},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to break bond: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to break bond: $e');
+    }
+  }
+
   Future<List<dynamic>> getChatList(int currentUserId) async {
     try {
       final response = await _httpService.get(
@@ -261,19 +291,16 @@ class AuthRepository {
     }
   }
 
-  Future<Map<String, dynamic>> getMatches(int currentUserId) async {
+  Future<Map<String, dynamic>> getMatches(int userId) async {
     try {
-      final response = await _httpService.get(
-        '/matches?current_user_id=$currentUserId',
-      );
-
+      final response = await _httpService.get('/matches?user_id=$userId');
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to load matches: ${response.statusCode}');
+        return {'liked_me': [], 'matches': []};
       }
     } catch (e) {
-      throw Exception('Failed to load matches: $e');
+      throw Exception('Failed to get matches: $e');
     }
   }
 
