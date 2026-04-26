@@ -663,8 +663,13 @@ def create_user():
             pr = data['prefs']
             # Use raw SQL to insert UserPrefs with geolocation
             pr = data['prefs']
-            lat = pr.get('latitude', 0.0)
-            lon = pr.get('longitude', 0.0)
+            lat = pr.get('latitude')
+            if lat is None:
+                lat = 0.0
+            
+            lon = pr.get('longitude')
+            if lon is None:
+                lon = 0.0
             
             sql = """
             INSERT INTO user_prefs (
