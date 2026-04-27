@@ -684,7 +684,7 @@ def create_user():
             )
             """
             
-            pt_str = f'POINT({lon} {lat})'
+            pt_str = f'POINT({lat} {lon})'
             
             db.session.execute(db.text(sql), {
                 'userid': new_user.id,
